@@ -136,4 +136,5 @@ class DEUPRegressor(RegressorMixin, MetaEstimatorMixin, BaseEstimator):
         check_is_fitted(self, "error_model_")
         raw = np.asarray(self.error_model_.predict(X), dtype=float)
         unc = inverse_error_transform(raw, method=self.target_transform, eps=self.error_eps)
-        return np.clip(unc, 0.0, None)
+        clipped: npt.NDArray[Any] = np.clip(unc, 0.0, None)
+        return clipped
