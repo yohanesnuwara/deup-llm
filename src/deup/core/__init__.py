@@ -8,13 +8,17 @@ runtime dependency is numpy.
 from __future__ import annotations
 
 from deup.core.grouping import Grouping
+from deup.core.losses import get_loss
+from deup.core.oof import OOFErrorCollector
 from deup.core.protocols import Predictor, ProbabilisticPredictor
 from deup.core.types import OOFResult, UncertaintyResult
 
 __all__ = [
     "Grouping",
+    "OOFErrorCollector",
     "OOFResult",
     "Predictor",
     "ProbabilisticPredictor",
     "UncertaintyResult",
+    "get_loss",
 ]
