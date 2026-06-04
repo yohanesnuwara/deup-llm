@@ -11,6 +11,8 @@ with the model you already use. The method is due to
 [Lahlou et al., 2023 (TMLR)](https://openreview.net/forum?id=eGLdVRvvfQ); this package
 is a maintained, installable, scikit-learn-compatible implementation of it.
 
+Repository: <https://github.com/ursinasanderink/deup>
+
 ## Why this exists
 
 The only public DEUP code is a 3-year-old research repo of notebooks; no maintained

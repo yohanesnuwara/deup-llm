@@ -50,9 +50,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sinsasanderink/deup"
-Repository = "https://github.com/sinsasanderink/deup"
-Issues = "https://github.com/sinsasanderink/deup/issues"
+Homepage = "https://github.com/ursinasanderink/deup"
+Repository = "https://github.com/ursinasanderink/deup"
+Issues = "https://github.com/ursinasanderink/deup/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/deup"]

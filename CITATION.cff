@@ -9,7 +9,7 @@ type: software
 authors:
   - family-names: Sanderink
     given-names: Ursina
-repository-code: "https://github.com/sinsasanderink/deup"
+repository-code: "https://github.com/ursinasanderink/deup"
 license: Apache-2.0
 keywords:
   - epistemic uncertainty
