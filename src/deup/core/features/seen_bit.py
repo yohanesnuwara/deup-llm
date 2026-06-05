@@ -36,8 +36,10 @@ class SeenBit(BaseEstimator, TransformerMixin):
         seen = np.zeros(n, dtype=float)
         if self.atol == 0.0 and self.rtol == 0.0:
             # Exact row match via structured view (fast for moderate n).
-            train_view = self.X_train_.view([("", self.X_train_.dtype)] * self.X_train_.shape[1])
-            test_view = X_arr.view([("", X_arr.dtype)] * X_arr.shape[1])
+            train = np.ascontiguousarray(self.X_train_)
+            test = np.ascontiguousarray(X_arr)
+            train_view = train.view([("", train.dtype)] * train.shape[1])
+            test_view = test.view([("", test.dtype)] * test.shape[1])
             for i, row in enumerate(test_view):
                 seen[i] = float(np.any(train_view == row))
         else:

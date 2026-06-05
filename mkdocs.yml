@@ -37,17 +37,23 @@ nav:
   - Theory & math: theory.md
   - Losses & transforms: losses.md
   - Feature builders: features.md
+  - Decomposition & ranking: decomposition.md
   - Benchmarks: benchmarks.md
   - API:
       - DEUPRegressor: api/estimators.md
       - Feature builders: api/features.md
+      - Decomposition: api/decomposition.md
       - Splitters: api/splitters.md
       - Core: api/core.md
 
 markdown_extensions:
   - admonition
   - pymdownx.highlight
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.arithmatex:

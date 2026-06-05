@@ -120,6 +120,4 @@ def _require_torch(context: str) -> None:
     import importlib.util
 
     if importlib.util.find_spec("torch") is None:
-        raise ImportError(
-            f'{context} requires torch. Install with: pip install "deup[torch]"'
-        )
+        raise ImportError(f'{context} requires torch. Install with: pip install "deup[torch]"')

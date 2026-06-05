@@ -7,6 +7,17 @@ runtime dependency is numpy.
 
 from __future__ import annotations
 
+from deup.core.aleatoric import Heteroscedastic, Homoscedastic, Quantile
+from deup.core.decompose import (
+    CouplingReport,
+    DensityKillDecision,
+    RankResidualizer,
+    coupling_retention_report,
+    decompose_epistemic,
+    density_kill_criterion,
+    partial_correlation,
+)
+from deup.core.error_estimator import ErrorEstimator
 from deup.core.grouping import Grouping
 from deup.core.losses import (
     TargetTransform,
@@ -19,14 +30,25 @@ from deup.core.protocols import Predictor, ProbabilisticPredictor
 from deup.core.types import OOFResult, UncertaintyResult
 
 __all__ = [
+    "CouplingReport",
+    "DensityKillDecision",
+    "ErrorEstimator",
     "Grouping",
+    "Heteroscedastic",
+    "Homoscedastic",
     "OOFErrorCollector",
     "OOFResult",
     "Predictor",
     "ProbabilisticPredictor",
+    "Quantile",
+    "RankResidualizer",
     "TargetTransform",
     "UncertaintyResult",
     "apply_error_transform",
+    "coupling_retention_report",
+    "decompose_epistemic",
+    "density_kill_criterion",
     "get_loss",
     "inverse_error_transform",
+    "partial_correlation",
 ]

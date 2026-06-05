@@ -47,23 +47,47 @@ predictors can shrink even as the model remains systematically wrong.
 
 ## DEUP estimator
 
-DEUP trains a secondary **error predictor** $g$ (called `error_model` in code) to
-estimate generalization error, then subtracts aleatoric uncertainty:
+DEUP trains a secondary **error predictor** $e$ (the `error_model`, written $g$ in
+this library's code) to estimate the generalization error $R(f, x)$, then subtracts
+an aleatoric estimate $a(x)$. The paper's estimator (Eq. 9) is
 
 $$
-\hat{e}(x) = \max\bigl(0,\; g(x) - a(x)\bigr).
+u(f, x) = e(f, x) - a(x),
 $$
+
+an estimator of the excess risk $\mathrm{ER}(f, x)$. Since epistemic uncertainty is
+non-negative, `deup` reports the **clipped** form used in the thesis,
+
+$$
+\hat{e}(x) = \max\bigl(0,\; g(x) - a(x)\bigr),
+$$
+
+which coincides with $u(f,x)$ wherever the latter is non-negative.
 
 | Symbol | Role in `deup` | v0.1 default |
 |---|---|---|
 | $f$ | `base_model` | any sklearn regressor |
-| $g$ | `error_model` | HistGradientBoostingRegressor |
+| $g \equiv e$ | `error_model` | HistGradientBoostingRegressor |
 | $a(x)$ | aleatoric floor | **0** (conservative proxy: $g(x)$ alone) |
 | $\ell$ | `loss` | `"squared"` (per-row error target) |
 
-Setting $a(x) \equiv 0$ is the paper's **pessimistic proxy** when aleatoric
-uncertainty is unknown or assumed slowly varying (Sec. 3, scenario 3). Aleatoric
-estimators and $\hat{e} = \max(0, g - a)$ land in v0.2 (Prompt P6).
+### Estimating the aleatoric floor $a(x)$
+
+The paper (Sec. 3) gives three scenarios, each implemented or planned in `deup`:
+
+1. **Noiseless** ($A(x) = 0$): set $a(x) = 0$, so $\hat{e}(x) = g(x)$. This is the
+   **v0.1 default** and the paper's choice for its noiseless experiments.
+2. **Replicate oracle** (regression, squared loss): with $K$ i.i.d. outcomes
+   $y_1,\dots,y_K \sim P(Y\mid x)$, the unbiased aleatoric target is
+   $\tfrac{K}{K-1}\widehat{\mathrm{Var}}(y_1,\dots,y_K)$; fit $a$ on these. Implemented
+   as `Heteroscedastic` / `Quantile` aleatoric estimators (P6).
+3. **No estimate available**: use $e(f,x)$ itself as a **conservative (pessimistic)
+   proxy** for epistemic uncertainty, i.e. $a(x)=0$. Valid when uncertainty is only
+   used to *rank* points and aleatoric noise is roughly constant across $\mathcal{X}$.
+
+Setting $a(x)\equiv 0$ (scenarios 1 and 3) is what v0.1 ships. The aleatoric
+estimators of scenario 2 and the $\hat{e}=\max(0,g-a)$ decomposition land in v0.2
+(Prompt P6).
 
 ## Algorithm 1 — fixed training set
 
