@@ -34,6 +34,7 @@ plugins:
 nav:
   - Home: index.md
   - Getting started: getting-started.md
+  - Five axes: concepts.md
   - Theory & math: theory.md
   - Losses & transforms: losses.md
   - Feature builders: features.md
@@ -43,6 +44,11 @@ nav:
   - Domain presets: domains.md
   - Migrating from thesis: migration.md
   - Benchmarks: benchmarks.md
+  - Tutorials:
+      - Tabular regression: tutorials/tabular-regression.md
+      - Finance ranking: tutorials/finance-ranking.md
+      - Classification + conformal: tutorials/classification-conformal.md
+      - Active learning: tutorials/active-learning.md
   - API:
       - DEUPRegressor: api/estimators.md
       - Feature builders: api/features.md

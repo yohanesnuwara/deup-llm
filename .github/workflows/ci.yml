@@ -25,7 +25,7 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,gbm]"
+          pip install -e ".[dev,gbm,finance,docs]"
       - name: Lint (ruff)
         run: |
           ruff check .
@@ -34,3 +34,7 @@ jobs:
         run: mypy
       - name: Test
         run: pytest --cov=deup --cov-report=term-missing
+      - name: Tutorial smoke tests
+        run: pytest tests/test_tutorials.py -v
+      - name: Docs build (strict)
+        run: mkdocs build --strict

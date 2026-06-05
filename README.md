@@ -8,9 +8,12 @@
 
 DEUP estimates *epistemic* uncertainty by training a secondary **error predictor** on
 your model's **out-of-sample** errors — no ensembles, no Bayesian retraining, works
-with the model you already use. The method is due to
-[Lahlou et al., 2023 (TMLR)](https://openreview.net/forum?id=eGLdVRvvfQ); this package
-is a maintained, installable, scikit-learn-compatible implementation of it.
+with the model you already use.
+
+**Method credit:** DEUP is due to
+[Lahlou et al., 2023 (TMLR)](https://openreview.net/forum?id=eGLdVRvvfQ). This package
+is a maintained, benchmarked, scikit-learn-compatible implementation with time-series /
+cross-sectional finance support and reliability diagnostics from Sanderink (2026).
 
 Repository: <https://github.com/ursinasanderink/deup> · Docs: <https://ursinasanderink.github.io/deup/>
 
@@ -26,13 +29,14 @@ model.fit(X_train, y_train)
 pred, unc = model.predict(X_test, return_uncertainty=True)
 ```
 
-For time-series / cross-sectional finance panels:
+**Time-series / cross-sectional finance** (flagship preset):
 
 ```python
 from deup.domains.finance import CrossSectionalDEUP
 
 model = CrossSectionalDEUP(horizon=20).fit(panel_df)
 pred, unc = model.predict(test_df, return_uncertainty=True)
+health = model.health_report(test_df)
 ```
 
 ## Install
@@ -44,29 +48,46 @@ pip install "deup[finance]" # + pandas (CrossSectionalDEUP)
 pip install "deup[docs]"    # + MkDocs site locally
 ```
 
-## Why this exists
+## Why this package?
 
-The only public DEUP code is a 3-year-old research repo of notebooks; no maintained
-`pip`-installable package existed until now. Major UQ libraries
-(`torch-uncertainty`, `uncertainty-toolbox`, `MAPIE`) don't implement DEUP. `deup`
-fills that gap with **correct out-of-fold error construction** for time-series /
-cross-sectional data.
+The only public DEUP code was a stale research repo of notebooks — no maintained
+`pip`-installable package. Major UQ libraries (`torch-uncertainty`, `uncertainty-toolbox`,
+`MAPIE`) don't implement DEUP. `deup` fills that gap with **leakage-correct OOF error
+construction** and **walk-forward / purged CV** for time-series and finance.
 
-- **Benchmarked** — see [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/) (DEUP vs ensembles/conformal/Laplace; N-sweep)
+## Comparison (California housing, Spearman ρ vs realized squared error)
 
-## Status / roadmap
+| Method | ρ | Notes |
+|---|---|---|
+| **DEUP** | **0.509** | OOF error predictor |
+| Ensemble disagreement | 0.460 | Bootstrap variance |
+| Conformal residual | 0.447 | \|y − ŷ\| on cal split |
+| Laplace (last-layer) | 0.015 | Not applicable to trees |
 
-**v0.3 (current):** full stack through P12 benchmarks — see [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/).
+Full results: [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/).
 
-**Next:** P13 doc polish (tutorials + CI doctests), P14 community/release.
+## Documentation
 
-**Future model presets:** XGBoost/CatBoost tabular; torchvision ResNet-18 → `VisionDEUP`;
-HuggingFace encoders; PyTorch Lightning integration.
+| Topic | Link |
+|---|---|
+| Getting started | [docs/getting-started](https://ursinasanderink.github.io/deup/getting-started/) |
+| Five-axis guide | [docs/concepts](https://ursinasanderink.github.io/deup/concepts/) |
+| Tutorials | [tabular](https://ursinasanderink.github.io/deup/tutorials/tabular-regression/) · [finance](https://ursinasanderink.github.io/deup/tutorials/finance-ranking/) · [conformal](https://ursinasanderink.github.io/deup/tutorials/classification-conformal/) · [active learning](https://ursinasanderink.github.io/deup/tutorials/active-learning/) |
+| When is agg-g reliable? | [reliability](https://ursinasanderink.github.io/deup/reliability/) |
+| Thesis migration | [migration](https://ursinasanderink.github.io/deup/migration/) |
+
+## Status
+
+**v0.3** — full stack through P13 docs: estimators, conformal calibration, reliability
+diagnostics, domain presets, thesis parity, benchmarks, tutorials (CI-tested).
+
+**Next:** P14 release polish (CONTRIBUTING, PyPI v0.3.x, community templates).
+
+**Planned presets:** XGBoost/CatBoost tabular (~1 day); torchvision ResNet-18 → `VisionDEUP`.
 
 ## Citing
 
-If you use `deup`, please cite both this software (see [`CITATION.cff`](CITATION.cff))
-and the original DEUP paper (Lahlou et al., 2023).
+Cite this software ([`CITATION.cff`](CITATION.cff)) **and** Lahlou et al. (2023).
 
 ## License
 

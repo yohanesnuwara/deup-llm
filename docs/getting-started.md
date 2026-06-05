@@ -205,13 +205,14 @@ gap is small; under walk-forward the fold models are legitimately smaller (expan
 window), which is the realistic operating regime. Pass `refit_on_all=False` (or a
 pre-fit estimator) if you want to disable the final refit.
 
-## What v0.3 includes / excludes
+## What v0.3 includes
 
-**Included:** everything in v0.2 plus aggregation-reliability diagnostics
-(`AggregationReliability`, `HealthIndex`), and domain presets (`CrossSectionalDEUP`,
-`TabularDEUP`, `VisionDEUP`), benchmark.
+**Included:** estimators, conformal calibration, aggregation-reliability diagnostics
+(`AggregationReliability`, `HealthIndex`), domain presets (`CrossSectionalDEUP`,
+`TabularDEUP`, `VisionDEUP`), thesis parity migration, benchmark suite, and
+[step-by-step tutorials](tutorials/tabular-regression.md).
 
-**Coming next:** thesis parity migration, full benchmark suite (N-sweep).
+Configure any use case via the [five-axis guide](concepts.md).
 
 ## Run the benchmark locally
 

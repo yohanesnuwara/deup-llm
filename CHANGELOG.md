@@ -4,6 +4,9 @@
 
 ### Added
 
+- **Documentation (P13):** five-axis conceptual guide, four tutorials (tabular, finance,
+  classification+conformal, active learning), README comparison table, CI tutorial smoke
+  tests + `mkdocs build --strict` in CI.
 - **Thesis migration (P11):** `walkforward_g_on_enriched`, `MIGRATION.md`, parity script
   (`scripts/parity_thesis_finance.py`); exact match on Ch13 v3 H=20 (max |Δg| = 0).
 - **Benchmark suite (P12):** N-sweep + figure, regression comparison (DEUP vs

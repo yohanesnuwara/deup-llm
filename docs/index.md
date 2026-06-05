@@ -45,6 +45,8 @@ health = model.health_report(test_df)
 | Topic | Page |
 |---|---|
 | Quickstart | [Getting started](getting-started.md) |
+| Five axes | [Concepts](concepts.md) |
+| Tutorials | [Tabular](tutorials/tabular-regression.md) · [Finance](tutorials/finance-ranking.md) · [Conformal](tutorials/classification-conformal.md) · [Active learning](tutorials/active-learning.md) |
 | Math & algorithms | [Theory & math](theory.md) |
 | When is agg-g reliable? | [Aggregation reliability](reliability.md) |
 | Finance / vision presets | [Domain presets](domains.md) |
@@ -60,4 +62,4 @@ build on Sanderink (2026). Please cite both papers and this software (`CITATION.
 ## Status
 
 **v0.3** — estimators, features, conformal calibration, diagnostics (Findings 1–2),
-domain presets, thesis parity, benchmark suite. See [CHANGELOG](https://github.com/ursinasanderink/deup/blob/main/CHANGELOG.md).
+domain presets, thesis parity, benchmark suite, tutorials. See [CHANGELOG](https://github.com/ursinasanderink/deup/blob/main/CHANGELOG.md).
