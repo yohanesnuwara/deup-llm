@@ -9,9 +9,12 @@ pip install deup
 Optional extras:
 
 ```bash
-pip install "deup[gbm]"    # LightGBM error predictor
-pip install "deup[torch]"    # neural / GP backends (v0.2+)
-pip install "deup[docs]"     # MkDocs site locally
+pip install "deup[gbm]"       # LightGBM tabular backend
+pip install "deup[xgb]"       # XGBoost tabular backend
+pip install "deup[catboost]"  # CatBoost tabular backend
+pip install "deup[gbm-all]"   # all gradient-boosting backends
+pip install "deup[finance]"   # CrossSectionalDEUP (pandas)
+pip install "deup[docs]"      # MkDocs site locally
 ```
 
 ## Quickstart — tabular regression

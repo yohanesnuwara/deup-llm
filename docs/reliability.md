@@ -100,6 +100,6 @@ contexts stay near-chance and **HealthIndex** recovers detection.
 
 ## Reference
 
-For the cross-sectional ranking extension and two-level deployment motivation, see
-Sanderink (2026), [arXiv:2603.13252](https://arxiv.org/abs/2603.13252) — optional
-background for finance users; the core DEUP method remains Lahlou et al. (2023).
+For optional background on cross-sectional ranking extensions and aggregation
+reliability in finance, see [arXiv:2603.13252](https://arxiv.org/abs/2603.13252).
+The core DEUP method remains Lahlou et al. (2023).

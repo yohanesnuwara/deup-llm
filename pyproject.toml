@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "deup"
-version = "0.3.2"
+version = "0.4.0"
 description = "Direct Epistemic Uncertainty Prediction (DEUP) for any scikit-learn model, with first-class time-series support."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -38,6 +38,9 @@ dependencies = [
 
 [project.optional-dependencies]
 gbm = ["lightgbm>=4.0"]
+xgb = ["xgboost>=2.0"]
+catboost = ["catboost>=1.2"]
+gbm-all = ["lightgbm>=4.0", "xgboost>=2.0", "catboost>=1.2"]
 torch = ["torch>=2.0", "gpytorch>=1.11"]
 finance = ["pandas>=2.0", "pyarrow>=14.0"]
 parity = ["pandas>=2.0", "pyarrow>=14.0", "lightgbm>=4.0", "scipy>=1.10"]
@@ -77,7 +80,7 @@ warn_unused_configs = true
 disallow_subclassing_any = false
 
 [[tool.mypy.overrides]]
-module = ["sklearn.*", "scipy.*", "lightgbm.*", "pandas.*"]
+module = ["sklearn.*", "scipy.*", "lightgbm.*", "pandas.*", "xgboost.*", "catboost.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

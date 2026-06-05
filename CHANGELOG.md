@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-06-05
+
+### Added
+
+- **Tabular GBM backends (P16):** `TabularDEUP(backend="lgbm"|"xgb"|"catboost")` wires
+  LightGBM, XGBoost, and CatBoost as default base + error predictors.
+- Optional extras: `deup[xgb]`, `deup[catboost]`, `deup[gbm-all]`.
+- Gate tests (`tests/test_tabular_backends.py`) + CI job for all GBM extras.
+- Regression benchmark optional rows for GBM tabular presets.
+
 ## [0.3.2] — 2026-06-05
 
 ### Added
@@ -71,6 +81,7 @@ superseded by v0.1.1).
 
 - `DEUPRegressor`, `OOFErrorCollector`, splitters, loss registry, California housing benchmark, MkDocs site.
 
+[0.4.0]: https://github.com/ursinasanderink/deup/releases/tag/v0.4.0
 [0.3.2]: https://github.com/ursinasanderink/deup/releases/tag/v0.3.2
 [0.3.1]: https://github.com/ursinasanderink/deup/releases/tag/v0.3.1
 [0.3.0]: https://github.com/ursinasanderink/deup/releases/tag/v0.3.0

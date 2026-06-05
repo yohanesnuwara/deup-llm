@@ -20,6 +20,9 @@ in the repository root (tables are committed from the last benchmark run).
 | Method | Spearman ρ | Notes |
 |---|---:|---|
 | **DEUP** | **0.509** | `DEUPRegressor` + RF |
+| **DEUP + LightGBM** | 0.444 | `TabularDEUP(backend="lgbm")` |
+| **DEUP + XGBoost** | 0.400 | `TabularDEUP(backend="xgb")` |
+| **DEUP + CatBoost** | 0.407 | `TabularDEUP(backend="catboost")` |
 | Ensemble disagreement | 0.460 | Bootstrap variance |
 | Conformal residual | 0.447 | Cal-set \|residual\| model |
 | Laplace (BayesianRidge) | 0.015 | Posterior variance |

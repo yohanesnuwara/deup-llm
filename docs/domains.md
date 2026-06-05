@@ -17,7 +17,7 @@ model = CrossSectionalDEUP(horizon=20, cv=5, embargo=1).fit(panel)
 model.calibrate(cal_panel, alpha=0.1)
 
 pred, unc = model.predict(test_panel, return_uncertainty=True)
-health = model.health_report(test_panel)   # per-date context gating (Finding 2)
+health = model.health_report(test_panel)   # per-date context gating
 health.gate                                # bool per date: trust / trade?
 ```
 
@@ -27,7 +27,7 @@ Defaults wired in:
 |---|---|
 | Estimator | :class:`~deup.estimators.DEUPRanker` |
 | CV | :class:`~deup.splitters.PurgedWalkForward` + embargo |
-| Rank geometry | residualization **ON** (Finding 3) |
+| Rank geometry | residualization **ON** |
 | g-features | vol / breadth / regime preset columns when present |
 | Context health | :class:`~deup.diagnostics.HealthIndex` |
 
@@ -53,6 +53,30 @@ unc = model.predict_epistemic(X_test)
 ```
 
 Wires ``KFold`` + raw ``X`` + Mahalanobis density features for ``g``.
+
+### Gradient-boosting backends
+
+Use ``backend`` to wire LightGBM, XGBoost, or CatBoost as both the base model ``f``
+and the error predictor ``g`` (same five-axis defaults):
+
+```python
+# pip install "deup[gbm]"      — LightGBM
+# pip install "deup[xgb]"       — XGBoost
+# pip install "deup[catboost]"  — CatBoost
+# pip install "deup[gbm-all]"   — all three
+
+model = TabularDEUP(backend="xgb", cv=5, random_state=0).fit(X, y)
+unc = model.predict_epistemic(X_test)
+```
+
+| ``backend`` | Extra | Base ``f`` + error ``g`` |
+|---|---|---|
+| ``"sklearn"`` | core | ``HistGradientBoosting*`` (default) |
+| ``"lgbm"`` | ``deup[gbm]`` | LightGBM |
+| ``"xgb"`` | ``deup[xgb]`` | XGBoost |
+| ``"catboost"`` | ``deup[catboost]`` | CatBoost |
+
+You can still pass custom ``base_model`` / ``error_model`` for full control.
 
 ## Vision / OOD classification
 

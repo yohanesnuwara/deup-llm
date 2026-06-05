@@ -57,6 +57,26 @@ def benchmark_laplace(
     }
 
 
+def benchmark_deup_tabular(
+    X_tr: np.ndarray,
+    y_tr: np.ndarray,
+    X_te: np.ndarray,
+    y_te: np.ndarray,
+    *,
+    backend: str = "sklearn",
+    seed: int = 0,
+) -> dict[str, float]:
+    from deup.domains.tabular import TabularDEUP
+
+    model = TabularDEUP(backend=backend, cv=5, random_state=seed).fit(X_tr, y_tr)
+    pred, unc = model.predict(X_te, return_uncertainty=True)
+    return {
+        "spearman": _spearman_unc_vs_sqerr(unc, y_te, pred),
+        "unc_mean": float(unc.mean()),
+        "backend": backend,
+    }
+
+
 def benchmark_deup(
     X_tr: np.ndarray,
     y_tr: np.ndarray,
@@ -150,6 +170,17 @@ def main() -> None:
             "laplace_bayesian_ridge": benchmark_laplace(X_tr, y_tr, X_te, y_te),
         },
     }
+
+    import_map = {"lgbm": "lightgbm", "xgb": "xgboost", "catboost": "catboost"}
+    for backend, pkg in import_map.items():
+        try:
+            __import__(pkg)
+            key = f"deup_tabular_{backend}"
+            results["methods"][key] = benchmark_deup_tabular(
+                X_tr, y_tr, X_te, y_te, backend=backend
+            )
+        except ImportError:
+            pass
 
     from benchmarks.common import write_json
 

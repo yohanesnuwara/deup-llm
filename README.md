@@ -29,6 +29,15 @@ model.fit(X_train, y_train)
 pred, unc = model.predict(X_test, return_uncertainty=True)
 ```
 
+**Tabular gradient boosting** (LightGBM / XGBoost / CatBoost):
+
+```python
+from deup.domains.tabular import TabularDEUP
+
+model = TabularDEUP(backend="lgbm", cv=5).fit(X_train, y_train)
+unc = model.predict_epistemic(X_test)
+```
+
 **Time-series / cross-sectional finance** (flagship preset):
 
 ```python
@@ -42,10 +51,13 @@ health = model.health_report(test_df)
 ## Install
 
 ```bash
-pip install deup            # core (numpy + scikit-learn)
-pip install "deup[gbm]"     # + LightGBM error predictor
-pip install "deup[finance]" # + pandas (CrossSectionalDEUP)
-pip install "deup[docs]"    # + MkDocs site locally
+pip install deup                 # core (numpy + scikit-learn)
+pip install "deup[gbm]"          # + LightGBM (TabularDEUP backend)
+pip install "deup[xgb]"          # + XGBoost
+pip install "deup[catboost]"     # + CatBoost
+pip install "deup[gbm-all]"      # all gradient-boosting backends
+pip install "deup[finance]"      # + pandas (CrossSectionalDEUP)
+pip install "deup[docs]"         # + MkDocs site locally
 ```
 
 ## Why this package?
@@ -59,7 +71,10 @@ construction** and **walk-forward / purged CV** for time-series and finance.
 
 | Method | ρ | Notes |
 |---|---|---|
-| **DEUP** | **0.509** | OOF error predictor |
+| **DEUP** | **0.509** | OOF error predictor (RF base) |
+| **DEUP + LightGBM** | 0.444 | `TabularDEUP(backend="lgbm")` |
+| **DEUP + XGBoost** | 0.400 | `TabularDEUP(backend="xgb")` |
+| **DEUP + CatBoost** | 0.407 | `TabularDEUP(backend="catboost")` |
 | Ensemble disagreement | 0.460 | Bootstrap variance |
 | Conformal residual | 0.447 | \|y − ŷ\| on cal split |
 | Laplace (last-layer) | 0.015 | Not applicable to trees |
@@ -72,6 +87,7 @@ Full results: [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/).
 |---|---|
 | Getting started | [docs/getting-started](https://ursinasanderink.github.io/deup/getting-started/) |
 | Five-axis guide | [docs/concepts](https://ursinasanderink.github.io/deup/concepts/) |
+| Domain presets | [docs/domains](https://ursinasanderink.github.io/deup/domains/) |
 | Tutorials | [tabular](https://ursinasanderink.github.io/deup/tutorials/tabular-regression/) · [finance](https://ursinasanderink.github.io/deup/tutorials/finance-ranking/) · [conformal](https://ursinasanderink.github.io/deup/tutorials/classification-conformal/) · [active learning](https://ursinasanderink.github.io/deup/tutorials/active-learning/) |
 | When is agg-g reliable? | [reliability](https://ursinasanderink.github.io/deup/reliability/) |
 | PyTorch / TorchUncertainty | [pytorch-integration](https://ursinasanderink.github.io/deup/pytorch-integration/) |
@@ -79,7 +95,9 @@ Full results: [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/).
 
 ## Status
 
-**v0.3.2** — full stack through P15 TorchUncertainty integration.
+**v0.4.0** — complete library: core DEUP, conformal calibration, reliability diagnostics,
+domain presets (tabular GBM backends, finance, vision), benchmarks, tutorials,
+TorchUncertainty integration.
 
 ## Citing
 

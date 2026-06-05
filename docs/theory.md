@@ -185,9 +185,8 @@ a point-in-time (PIT-safe) baseline. Two empirical findings motivate the library
 - Lahlou, Jain, Nekoei, Butoi, Bertin, Rector-Brooks, Korablyov, Bengio (2023).
   *DEUP: Direct Epistemic Uncertainty Prediction.* TMLR.
   [arXiv:2102.08501](https://arxiv.org/abs/2102.08501)
-- Sanderink, U. (2026). Cross-sectional ranking extension and aggregation reliability.
-  [arXiv:2603.13252](https://arxiv.org/abs/2603.13252) — optional background for
-  finance workflows.
+- Cross-sectional ranking / aggregation reliability (optional finance background):
+  [arXiv:2603.13252](https://arxiv.org/abs/2603.13252)
 - Kotelevskii *et al.* (2025a). Bregman-divergence excess risk (formal cover for DEUP).
 - Lee *et al.* (2018). Mahalanobis OOD score (diagonal Gaussian special case).
 - Hüllermeier & Waegeman (2019). Aleatoric vs epistemic uncertainty survey.

@@ -10,6 +10,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  gbm-backends:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install libomp (LightGBM)
+        run: sudo apt-get update && sudo apt-get install -y libgomp1
+      - name: Install with all GBM extras
+        run: pip install -e ".[dev,gbm,xgb,catboost]"
+      - name: Tabular backend tests
+        run: pytest tests/test_tabular_backends.py -v
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:

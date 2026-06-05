@@ -17,7 +17,8 @@ Pick one row from the map below — everything else is wiring.
 
 | Use case | Task | Loss | Group | CV | g-features |
 |---|---|---|---|---|---|
-| Generic tabular | `DEUPRegressor` | squared | i.i.d. | `KFold` | raw X + density |
+| Generic tabular | `TabularDEUP` | squared | i.i.d. | `KFold` | raw X + density |
+| Tabular + LightGBM/XGB/CatBoost | `TabularDEUP(backend=…)` | squared | i.i.d. | `KFold` | raw X + density |
 | Cross-sectional ranker | `DEUPRanker` | rank | by-date | `PurgedWalkForward` | score, vol, regime |
 | Time-series forecast | `DEUPRegressor` | squared | time | walk-forward | residual, vol |
 | Classification + intervals | `DEUPClassifier` | log-loss | i.i.d. | `KFold` | raw X |

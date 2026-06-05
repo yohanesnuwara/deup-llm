@@ -5,8 +5,8 @@
   "test_n": 4128,
   "methods": {
     "deup": {
-      "spearman": 0.5090254767317876,
-      "unc_mean": 0.0631542871963915
+      "spearman": 0.5082892313137847,
+      "unc_mean": 0.06453458023402062
     },
     "ensemble_disagreement": {
       "spearman": 0.45962140866462203,
@@ -19,6 +19,21 @@
     "laplace_bayesian_ridge": {
       "spearman": 0.014733426622989607,
       "unc_mean": 0.5241891979026926
+    },
+    "deup_tabular_lgbm": {
+      "spearman": 0.444291522290806,
+      "unc_mean": 0.05085810577372555,
+      "backend": "lgbm"
+    },
+    "deup_tabular_xgb": {
+      "spearman": 0.39968065648781026,
+      "unc_mean": 0.06729312900868381,
+      "backend": "xgb"
+    },
+    "deup_tabular_catboost": {
+      "spearman": 0.40703566492607585,
+      "unc_mean": 0.06365132107589616,
+      "backend": "catboost"
     }
   }
 }

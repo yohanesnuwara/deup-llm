@@ -16,4 +16,4 @@ from __future__ import annotations
 from deup.estimators import DEUPClassifier, DEUPRanker, DEUPRegressor
 
 __all__ = ["DEUPClassifier", "DEUPRanker", "DEUPRegressor", "__version__"]
-__version__ = "0.3.2"
+__version__ = "0.4.0"

@@ -80,13 +80,35 @@ class ErrorEstimator(BaseEstimator):
         if self.model is None:
             return HistGradientBoostingRegressor()
         if isinstance(self.model, str):
-            if self.model == "lightgbm":
+            key = self.model
+            if key == "lgbm":
+                key = "lightgbm"
+            if key == "lightgbm":
                 try:
                     from lightgbm import LGBMRegressor
                 except ImportError as exc:
                     raise ImportError('model="lightgbm" requires: pip install "deup[gbm]"') from exc
-                return LGBMRegressor()
-            raise ValueError(f"Unknown model string: {self.model!r}")
+                return LGBMRegressor(n_estimators=100, verbose=-1)
+            if key == "xgb":
+                try:
+                    from xgboost import XGBRegressor
+                except ImportError as exc:
+                    raise ImportError('model="xgb" requires: pip install "deup[xgb]"') from exc
+                return XGBRegressor(n_estimators=100, verbosity=0)
+            if key == "catboost":
+                try:
+                    from catboost import CatBoostRegressor
+                except ImportError as exc:
+                    raise ImportError(
+                        'model="catboost" requires: pip install "deup[catboost]"'
+                    ) from exc
+                return CatBoostRegressor(
+                    iterations=100, verbose=False, allow_writing_files=False
+                )
+            raise ValueError(
+                f"Unknown model string: {self.model!r}. "
+                "Use 'lightgbm'/'lgbm', 'xgb', or 'catboost'."
+            )
         return clone(self.model)
 
     def _build_features(self, X: Any, y: npt.ArrayLike | None, *, fit: bool) -> Any:

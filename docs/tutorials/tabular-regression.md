@@ -46,10 +46,22 @@ pred, unc = model.predict(X_te, return_uncertainty=True)
 ```python
 from deup.domains.tabular import TabularDEUP
 
+# sklearn default (HistGradientBoosting)
 preset = TabularDEUP(cv=5, random_state=0)
 preset.fit(X_tr, y_tr)
 unc = preset.predict_epistemic(X_te)
 ```
+
+### LightGBM / XGBoost / CatBoost
+
+```python
+# pip install "deup[xgb]"  # or deup[gbm], deup[catboost], deup[gbm-all]
+preset = TabularDEUP(backend="xgb", cv=5, random_state=0)
+preset.fit(X_tr, y_tr)
+unc = preset.predict_epistemic(X_te)
+```
+
+Same OOF + density-feature pipeline; only the base and error models change.
 
 ## Benchmark context
 

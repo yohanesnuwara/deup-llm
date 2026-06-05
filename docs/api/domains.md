@@ -16,6 +16,8 @@
 
 ::: deup.domains.tabular.TabularDEUP
 
+::: deup.domains.tabular.default_tabular_base_model
+
 ::: deup.domains.tabular.tabular_feature_pipeline
 
 ## Vision

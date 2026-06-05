@@ -10,7 +10,8 @@ aggregation-reliability diagnostics.
 
 ```bash
 pip install deup
-pip install "deup[finance,gbm]"   # pandas + LightGBM presets
+pip install "deup[finance,gbm]"   # pandas + LightGBM tabular backend
+pip install "deup[xgb,catboost]" # optional XGBoost / CatBoost backends
 ```
 
 ```python
@@ -61,7 +62,8 @@ Korablyov, and Bengio (2023, TMLR). Please cite the original paper and this soft
 
 ## Status
 
-**v0.3.2** — estimators, conformal calibration, reliability diagnostics, domain presets,
-benchmark suite, tutorials, TorchUncertainty cross-link. See [CHANGELOG](https://github.com/ursinasanderink/deup/blob/main/CHANGELOG.md).
+**v0.4.0** — estimators, conformal calibration, reliability diagnostics, domain presets
+(tabular with LightGBM/XGBoost/CatBoost, finance, vision), benchmark suite, tutorials,
+TorchUncertainty cross-link. See [CHANGELOG](https://github.com/ursinasanderink/deup/blob/main/CHANGELOG.md).
 
 Contributions welcome — see [CONTRIBUTING.md](https://github.com/ursinasanderink/deup/blob/main/CONTRIBUTING.md).

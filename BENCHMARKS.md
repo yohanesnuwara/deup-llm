@@ -33,6 +33,9 @@ otherwise a synthetic panel is used.
 | Method | Spearman ρ | Notes |
 |---|---:|---|
 | **DEUP** | **0.509** | `DEUPRegressor` + RF base, 5-fold OOF |
+| **DEUP + LightGBM** | 0.444 | `TabularDEUP(backend="lgbm")` |
+| **DEUP + XGBoost** | 0.400 | `TabularDEUP(backend="xgb")` |
+| **DEUP + CatBoost** | 0.407 | `TabularDEUP(backend="catboost")` |
 | Ensemble disagreement | 0.460 | 5 bootstrap RF members, prediction variance |
 | Conformal residual | 0.447 | Cal-set model for \|residual\| magnitude |
 | Laplace (BayesianRidge) | 0.015 | Gaussian posterior variance (poor on this task) |
