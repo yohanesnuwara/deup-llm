@@ -128,7 +128,6 @@ Walk-forward error predictor on a cross-sectional ranker panel via
 
 ## Future model presets (planned)
 
-- **XGBoost / CatBoost** tabular presets
 - **torchvision** ResNet-18 embeddings → `VisionDEUP`
 - **HuggingFace** encoder preset (text/sentence → DEUP)
 - **PyTorch Lightning** training-loop integration

@@ -55,5 +55,5 @@ Details: [Aggregation reliability](reliability.md).
 
 ## Future work
 
-XGBoost/CatBoost tabular presets; torchvision ResNet-18 → `VisionDEUP`; HuggingFace encoders;
-PyTorch Lightning hooks — see the project roadmap.
+torchvision ResNet-18 → `VisionDEUP`; HuggingFace encoders; PyTorch Lightning hooks — see
+the project roadmap.

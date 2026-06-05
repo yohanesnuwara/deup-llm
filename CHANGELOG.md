@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.4.1] — 2026-06-05
+
+### Changed
+
+- PyPI short description mentions gradient-boosting backends.
+- Docs: remove completed GBM presets from “future work” sections.
+
 ## [0.4.0] — 2026-06-05
 
 ### Added

@@ -21,7 +21,7 @@ mkdocs build --strict
 
 - Bug fixes with a regression test
 - Documentation improvements (tutorials, API clarity, benchmarks)
-- New **optional** extras (e.g. XGBoost/CatBoost presets) that follow existing patterns
+- New **optional** extras (e.g. additional GBM or domain presets) that follow existing patterns
 - Benchmarks that reproduce on CPU in CI (or are marked `@pytest.mark.integration`)
 
 ## Design principles
