@@ -66,17 +66,62 @@ pred, unc = model.predict(X_test, return_uncertainty=True)
 
 ## Cross-sectional ranking
 
-Use the `rank` loss with group-coherent CV:
+Use :class:`~deup.estimators.DEUPRanker` — rank loss, walk-forward CV, and rank-geometry
+residualization ON by default (Finding 3):
 
 ```python
-model = DEUPRegressor(
-    base_model=my_ranker,
-    loss="rank",
-    cv=PurgedWalkForward(n_splits=5, embargo=5),
-)
+from deup import DEUPRanker
+
+model = DEUPRanker(base_model=my_ranker, cv=5)
 model.fit(X, y, groups=dates)
-unc = model.predict_epistemic(X)
+pred, unc = model.predict(X_test, return_uncertainty=True, groups=test_dates)
 ```
+
+Set `residualize_rank=False` to disable decoupling (not recommended for rankers).
+
+## Classification
+
+```python
+from deup import DEUPClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+model = DEUPClassifier(base_model=RandomForestClassifier(), cv=5)
+model.fit(X, y)
+pred, unc = model.predict(X_test, return_uncertainty=True)
+proba = model.predict_proba(X_test)
+```
+
+Default loss is `logloss`; use `loss="brier"` for Brier score targets.
+
+## Active learning — `acquire`
+
+Select the `k` pool points with highest epistemic uncertainty (DEUP paper, Sec. 3.2):
+
+```python
+idx = model.acquire(X_pool, k=10)
+# or with uncertainty values:
+idx, unc = model.acquire(X_pool, k=10, return_uncertainty=True)
+```
+
+For rankers pass `groups=` so residualization is correct on panel data.
+
+## Aleatoric decomposition
+
+Subtract an aleatoric floor for a cleaner epistemic signal
+$\hat{e}(x) = \max(0, g(x) - a(x))$:
+
+```python
+from deup.core import Heteroscedastic
+
+model = DEUPRegressor(
+    base_model=my_model,
+    aleatoric=Heteroscedastic(k=20),
+)
+model.fit(X, y)
+unc = model.predict_epistemic(X)  # max(0, g - a)
+```
+
+See [Decomposition](decomposition.md) for details.
 
 ## Target stabilization
 
@@ -116,15 +161,14 @@ gap is small; under walk-forward the fold models are legitimately smaller (expan
 window), which is the realistic operating regime. Pass `refit_on_all=False` (or a
 pre-fit estimator) if you want to disable the final refit.
 
-## What v0.1 includes / excludes
+## What v0.2 includes / excludes
 
-**Included:** `DEUPRegressor`, leakage-correct OOF collection, splitters
-(`KFold`, `TimeSeriesSplit`, `PurgedWalkForward`), loss registry, feature builders
-(`FeaturePipeline`, density/variance/seen-bit), benchmark.
+**Included:** `DEUPRegressor`, `DEUPClassifier`, `DEUPRanker`, `acquire`, leakage-correct
+OOF collection, splitters, loss registry, feature builders, `ErrorEstimator`,
+aleatoric estimators, rank-geometry residualization, benchmark.
 
-**Coming in v0.2:** `ErrorEstimator` wiring features into `DEUPRegressor`,
-`DEUPClassifier` / `DEUPRanker`, conformal intervals, aleatoric decomposition,
-aggregation-reliability diagnostics.
+**Coming in v0.2+:** conformal intervals (`predict_interval`), aggregation-reliability
+diagnostics, full benchmark suite.
 
 ## Run the benchmark locally
 

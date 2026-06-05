@@ -18,6 +18,18 @@ from deup import DEUPRegressor
 model = DEUPRegressor(base_model=RandomForestRegressor())
 model.fit(X_train, y_train)
 pred, unc = model.predict(X_test, return_uncertainty=True)
+
+# Active learning: pick the 10 most uncertain points
+idx = model.acquire(X_pool, k=10)
+```
+
+For classification or cross-sectional ranking:
+
+```python
+from deup import DEUPClassifier, DEUPRanker
+
+clf = DEUPClassifier(base_model=my_classifier).fit(X, y)
+ranker = DEUPRanker(base_model=my_ranker).fit(X, y, groups=dates)
 ```
 
 ## Why deup?

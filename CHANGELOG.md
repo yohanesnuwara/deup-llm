@@ -2,16 +2,17 @@
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-06-05
+
 ### Added
 
-- **P5 feature builders** for `g(x)`: `RawFeatures`, `DensityFeature`
-  (`mahalanobis`/`knn`/`kde`), `VarianceFeature` (ensemble), `DistanceToTrain`,
-  `SeenBit`, `ResidualMagnitude`, and `FeaturePipeline`.
-- **P6 decomposition**: `ErrorEstimator` (reusable `g`), aleatoric estimators
-  (`Homoscedastic`, `Heteroscedastic`, `Quantile`), `decompose_epistemic`
-  (`max(0, g - a)`), `RankResidualizer` + `coupling_retention_report` for
-  rank-geometry decoupling (Finding 3), and `density_kill_criterion`.
-- Docs: `theory.md` (math), `features.md`, `decomposition.md` with MathJax.
+- **`DEUPClassifier`** — classification with log-loss / Brier OOF errors + `predict_proba`
+- **`DEUPRanker`** — cross-sectional ranking; `loss="rank"`, `PurgedWalkForward` default,
+  rank-geometry residualization ON by default (Finding 3)
+- **`acquire(pool, k)`** — active-learning hook (top-k by epistemic uncertainty)
+- Refactored **`DEUPRegressor`** onto `ErrorEstimator` + optional `features` /
+  `aleatoric` / `decompose`
+- Docs updated for all three estimators and `acquire`
 
 ## [0.1.1] — 2026-06-04
 

@@ -55,11 +55,11 @@ than ensemble disagreement or a conformal residual baseline — see [BENCHMARKS.
 
 ## Status / roadmap
 
-**v0.1 (released):** `DEUPRegressor`, OOF collector, splitters, full loss registry
-(squared / Brier / pinball / rank), target transforms (log / asinh), benchmark, docs.
+**v0.2 (current):** `DEUPRegressor`, `DEUPClassifier`, `DEUPRanker`, `acquire`,
+OOF collector, splitters, full loss registry, feature builders, `ErrorEstimator`,
+aleatoric decomposition, rank residualization, benchmark, docs.
 
-**v0.2:** `DEUPClassifier` / `DEUPRanker`, conformal intervals, aleatoric decomposition,
-density/GP features, aggregation-reliability diagnostics.
+**Next:** conformal intervals (P8), aggregation-reliability diagnostics (P9).
 
 ## Citing
 
