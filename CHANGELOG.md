@@ -9,6 +9,10 @@
   `calibrate(...)` + `predict_interval(...)` on all estimators, and a
   `deup_normalizer` adapter for MAPIE interop (`examples/mapie_interop.py`).
 - Docs: `calibration.md`; added Sanderink (2026) ranking-DEUP paper to theory refs.
+- **Reliability diagnostics** (`deup.diagnostics`): `AggregationReliability` /
+  `should_trust_aggregate` (effective-N + autocorrelation guard for `mean(g)`,
+  Finding 1) and `HealthIndex` (pluggable composite context-reliability index for
+  low-N / non-i.i.d. regimes, Finding 2). Docs: `reliability.md`.
 
 ## [0.2.0] — 2026-06-05
 

@@ -137,6 +137,21 @@ interval.lower, interval.upper
 See [Conformal calibration](calibration.md) for methods (`normalized`, `mondrian`,
 `cqr`) and MAPIE interop.
 
+## Aggregating `g` over contexts (read this first)
+
+Averaging `g` into a context-level signal (`mean(g)` per day/batch/group) is only
+trustworthy at high N with i.i.d. errors. Before relying on it, check:
+
+```python
+from deup.diagnostics import should_trust_aggregate
+
+verdict = should_trust_aggregate(g, groups)
+print(verdict.trustworthy, verdict.reason)
+```
+
+For low-N / non-i.i.d. (time-series, finance), use the composite `HealthIndex`
+instead. See [When is aggregated DEUP reliable?](reliability.md).
+
 ## Target stabilization
 
 Heavy-tailed error targets are stabilized before training `g`:
