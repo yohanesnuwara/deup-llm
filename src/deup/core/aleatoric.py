@@ -95,7 +95,8 @@ class Heteroscedastic(BaseEstimator):
         _, idx = self._nn.kneighbors(X_arr, n_neighbors=self._k_eff)
         neighbor_y = self._y[idx]
         var = neighbor_y.var(axis=1, ddof=1) if self._k_eff > 1 else np.zeros(len(X_arr))
-        return np.clip(np.asarray(var, dtype=float), 0.0, None)
+        out: npt.NDArray[np.float64] = np.clip(np.asarray(var, dtype=np.float64), 0.0, None)
+        return out
 
 
 class Quantile(BaseEstimator):
