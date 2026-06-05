@@ -1,0 +1,149 @@
+# Theory & mathematics
+
+This page summarizes the DEUP framework as defined by Lahlou *et al.* (2023,
+[TMLR](https://arxiv.org/abs/2102.08501)) and the risk decomposition used in this
+library. The implementation follows **Algorithm 2** (K-fold pre-fill of the error
+dataset) for honest out-of-sample error targets.
+
+## Risk decomposition
+
+For input $x \in \mathcal{X}$, target $y \in \mathcal{Y}$, loss $\ell$, and predictor
+$f$, the **pointwise risk** is
+
+$$
+R(f, x) = \mathbb{E}_{P(Y \mid X=x)}\bigl[\ell(Y, f(x))\bigr].
+$$
+
+The **Bayes predictor** $f^*(x) = \arg\min_a \mathbb{E}[\ell(Y, a) \mid X=x]$ achieves
+the irreducible **aleatoric** floor
+
+$$
+A(x) = R(f^*, x).
+$$
+
+The **excess risk** (epistemic uncertainty under this framework) is
+
+$$
+\mathrm{ER}(f, x) = R(f, x) - A(x).
+$$
+
+Under squared error with Gaussian $P(Y \mid X=x) = \mathcal{N}(\mu(x), \sigma^2(x))$:
+
+$$
+R(f,x) = \sigma^2(x) + (f(x)-\mu(x))^2, \qquad
+\mathrm{ER}(f,x) = (f(x)-\mu(x))^2.
+$$
+
+Under log loss for $K$-class classification with $\mu(x) \in \Delta^K$:
+
+$$
+R(f,x) = H(\mu(x), f(x)), \qquad
+\mathrm{ER}(f,x) = D_{\mathrm{KL}}(\mu(x) \,\|\, f(x)).
+$$
+
+Unlike posterior-variance estimators, excess risk captures **model misspecification**
+(bias): when $f^* \notin \mathcal{H}$, disagreement among approximate Bayesian
+predictors can shrink even as the model remains systematically wrong.
+
+## DEUP estimator
+
+DEUP trains a secondary **error predictor** $g$ (called `error_model` in code) to
+estimate generalization error, then subtracts aleatoric uncertainty:
+
+$$
+\hat{e}(x) = \max\bigl(0,\; g(x) - a(x)\bigr).
+$$
+
+| Symbol | Role in `deup` | v0.1 default |
+|---|---|---|
+| $f$ | `base_model` | any sklearn regressor |
+| $g$ | `error_model` | HistGradientBoostingRegressor |
+| $a(x)$ | aleatoric floor | **0** (conservative proxy: $g(x)$ alone) |
+| $\ell$ | `loss` | `"squared"` (per-row error target) |
+
+Setting $a(x) \equiv 0$ is the paper's **pessimistic proxy** when aleatoric
+uncertainty is unknown or assumed slowly varying (Sec. 3, scenario 3). Aleatoric
+estimators and $\hat{e} = \max(0, g - a)$ land in v0.2 (Prompt P6).
+
+## Algorithm 1 — fixed training set
+
+Given trained $f$, validation set $\{(x_i', y_i')\}$, and aleatoric estimator $a$:
+
+1. Build $\mathcal{D}_e = \{(x_i', \ell(y_i', f(x_i'))\}_{i=1}^K$.
+2. Fit $g$ on $\mathcal{D}_e$ (regress errors; often with $\log(\text{error} + \varepsilon)$
+   target stabilization).
+3. Return $\hat{u}(x) = g(x) - a(x)$.
+
+**Critical:** errors must be **out-of-sample** for $f$. Using in-sample residuals
+underestimates uncertainty (Sec. 3.2).
+
+## Algorithm 2 — K-fold pre-fill (what `OOFErrorCollector` implements)
+
+When no held-out set exists, pre-fill $\mathcal{D}_e$ via cross-validation:
+
+1. For each fold $k$: clone $f$, fit on train indices, predict held-out indices.
+2. Store out-of-fold prediction $\hat{y}_i$ and error $\ell(y_i, \hat{y}_i)$.
+3. Optionally refit $f$ on **all** data for deployment (`refit_on_all=True`).
+
+Each row receives exactly one out-of-sample error — the target for $g$. Rows never
+held out (e.g. earliest walk-forward window) are excluded.
+
+### Refit assumption
+
+With `refit_on_all=True`, $g$ learns errors of fold models $f_{-k}$ (strict subsets)
+but is paired at inference with full-data $f$. This standard stacking assumption means
+$g$ describes a *slightly smaller* model; the gap is small for reasonable fold counts.
+
+## Stationarizing features $\phi_{z^N}(x)$
+
+In interactive settings the error target is non-stationary as $f$ is retrained. The
+paper embeds $(x, z^N)$ into **stationarizing features** (Sec. 3.2, Eq. 12):
+
+$$
+\phi_{z^N}(x) = \bigl(x,\; s,\; \log \hat{q}(x \mid z^N),\; \log \hat{V}(\tilde{\mathcal{L}}, z^N, x)\bigr)
+$$
+
+| Feature | Builder in `deup` | Meaning |
+|---|---|---|
+| $x$ | `RawFeatures` | raw inputs |
+| $s$ | `SeenBit` | 1 if $x$ was in training set $z^N$, else 0 |
+| $\log \hat{q}$ | `DensityFeature` | log-density under training distribution |
+| $\log \hat{V}$ | `VarianceFeature` | log predictive variance (ensemble / GP) |
+| distance | `DistanceToTrain` | $k$-th NN distance to training manifold |
+| \|residual\| proxy | `ResidualMagnitude` | kNN-smoothed training residual magnitude |
+
+**Mahalanobis / diagonal Gaussian density** (Appendix C; Lee *et al.* 2018 OOD
+baseline). With per-dimension MLE $\mu_d$, $\sigma^2_d$ (clamped $\geq 10^{-6}$):
+
+$$
+\log \hat{q}(x) = -\tfrac{1}{2}\sum_d \left[\frac{(x_d-\mu_d)^2}{\sigma^2_d} + \log\sigma^2_d\right] - \tfrac{D}{2}\log(2\pi).
+$$
+
+`DensityFeature(method="mahalanobis")` implements this closed-form estimator.
+
+!!! note "Finding 3 — density can be null"
+    In homogeneous tabular/finance universes, density features may add **no signal**
+    beyond rank geometry. Treat density as **optional and ablatable**; rank-geometry
+    residualization (P6) is required for cross-sectional rankers.
+
+## Mapping to library objects
+
+```mermaid
+flowchart LR
+  X["X, y"] --> OOF["OOFErrorCollector"]
+  OOF -->|"oof errors"| G["error_model g"]
+  X --> FP["FeaturePipeline φ"]
+  FP --> G
+  OOF -->|"f refit"| F["base_model f"]
+  F --> Pred["predict(X)"]
+  G --> Unc["predict_epistemic(X)"]
+```
+
+## References
+
+- Lahlou, Jain, Nekoei, Butoi, Bertin, Rector-Brooks, Korablyov, Bengio (2023).
+  *DEUP: Direct Epistemic Uncertainty Prediction.* TMLR.
+  [arXiv:2102.08501](https://arxiv.org/abs/2102.08501)
+- Kotelevskii *et al.* (2025a). Bregman-divergence excess risk (formal cover for DEUP).
+- Lee *et al.* (2018). Mahalanobis OOD score (diagonal Gaussian special case).
+- Hüllermeier & Waegeman (2019). Aleatoric vs epistemic uncertainty survey.

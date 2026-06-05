@@ -119,10 +119,12 @@ pre-fit estimator) if you want to disable the final refit.
 ## What v0.1 includes / excludes
 
 **Included:** `DEUPRegressor`, leakage-correct OOF collection, splitters
-(`KFold`, `TimeSeriesSplit`, `PurgedWalkForward`), loss registry, benchmark.
+(`KFold`, `TimeSeriesSplit`, `PurgedWalkForward`), loss registry, feature builders
+(`FeaturePipeline`, density/variance/seen-bit), benchmark.
 
-**Coming in v0.2:** `DEUPClassifier` / `DEUPRanker`, conformal intervals,
-aleatoric decomposition, density/GP features, aggregation-reliability diagnostics.
+**Coming in v0.2:** `ErrorEstimator` wiring features into `DEUPRegressor`,
+`DEUPClassifier` / `DEUPRanker`, conformal intervals, aleatoric decomposition,
+aggregation-reliability diagnostics.
 
 ## Run the benchmark locally
 

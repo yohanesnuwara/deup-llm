@@ -36,4 +36,6 @@ implementation; please cite both the paper and this software (`CITATION.cff`).
 ## Next steps
 
 - [Getting started](getting-started.md) — install, fit, interpret uncertainty
+- [Theory & math](theory.md) — risk decomposition, DEUP algorithms, stationarizing features
 - [Losses & transforms](losses.md) — squared, Brier, pinball, rank, log/asinh targets
+- [Feature builders](features.md) — density, variance, seen-bit for $g(x)$
