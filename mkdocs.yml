@@ -42,6 +42,7 @@ nav:
   - Conformal calibration: calibration.md
   - Aggregation reliability: reliability.md
   - Domain presets: domains.md
+  - PyTorch / TorchUncertainty: pytorch-integration.md
   - Benchmarks: benchmarks.md
   - Tutorials:
       - Tabular regression: tutorials/tabular-regression.md

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-06-05
+
+### Added
+
+- **TorchUncertainty integration (P15):** upstream DEUP post-processing PR
+  ([#313](https://github.com/torch-uncertainty/torch-uncertainty/pull/313));
+  docs page for PyTorch / Lightning workflows.
+
 ## [0.3.1] — 2026-06-05
 
 ### Added
@@ -63,6 +71,7 @@ superseded by v0.1.1).
 
 - `DEUPRegressor`, `OOFErrorCollector`, splitters, loss registry, California housing benchmark, MkDocs site.
 
+[0.3.2]: https://github.com/ursinasanderink/deup/releases/tag/v0.3.2
 [0.3.1]: https://github.com/ursinasanderink/deup/releases/tag/v0.3.1
 [0.3.0]: https://github.com/ursinasanderink/deup/releases/tag/v0.3.0
 [0.1.1]: https://github.com/ursinasanderink/deup/releases/tag/v0.1.1

@@ -74,12 +74,12 @@ Full results: [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/).
 | Five-axis guide | [docs/concepts](https://ursinasanderink.github.io/deup/concepts/) |
 | Tutorials | [tabular](https://ursinasanderink.github.io/deup/tutorials/tabular-regression/) · [finance](https://ursinasanderink.github.io/deup/tutorials/finance-ranking/) · [conformal](https://ursinasanderink.github.io/deup/tutorials/classification-conformal/) · [active learning](https://ursinasanderink.github.io/deup/tutorials/active-learning/) |
 | When is agg-g reliable? | [reliability](https://ursinasanderink.github.io/deup/reliability/) |
+| PyTorch / TorchUncertainty | [pytorch-integration](https://ursinasanderink.github.io/deup/pytorch-integration/) |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## Status
 
-**v0.3.1** — full stack: estimators, conformal calibration, reliability diagnostics,
-domain presets, benchmarks, tutorials (CI-tested).
+**v0.3.2** — full stack through P15 TorchUncertainty integration.
 
 ## Citing
 

@@ -50,6 +50,7 @@ health = model.health_report(test_df)
 | Math & algorithms | [Theory & math](theory.md) |
 | When is agg-g reliable? | [Aggregation reliability](reliability.md) |
 | Finance / vision presets | [Domain presets](domains.md) |
+| PyTorch / TorchUncertainty | [PyTorch integration](pytorch-integration.md) |
 | Benchmarks & N-sweep | [Benchmarks](benchmarks.md) |
 
 ## Attribution
@@ -60,7 +61,7 @@ Korablyov, and Bengio (2023, TMLR). Please cite the original paper and this soft
 
 ## Status
 
-**v0.3.1** — estimators, conformal calibration, reliability diagnostics, domain presets,
-benchmark suite, tutorials. See [CHANGELOG](https://github.com/ursinasanderink/deup/blob/main/CHANGELOG.md).
+**v0.3.2** — estimators, conformal calibration, reliability diagnostics, domain presets,
+benchmark suite, tutorials, TorchUncertainty cross-link. See [CHANGELOG](https://github.com/ursinasanderink/deup/blob/main/CHANGELOG.md).
 
 Contributions welcome — see [CONTRIBUTING.md](https://github.com/ursinasanderink/deup/blob/main/CONTRIBUTING.md).
