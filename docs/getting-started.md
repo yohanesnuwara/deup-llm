@@ -123,6 +123,20 @@ unc = model.predict_epistemic(X)  # max(0, g - a)
 
 See [Decomposition](decomposition.md) for details.
 
+## Prediction intervals (conformal)
+
+Wrap the epistemic score in calibrated intervals with marginal coverage $1-\alpha$:
+
+```python
+model = DEUPRegressor(base_model=my_model).fit(X_train, y_train)
+model.calibrate(X_cal, y_cal, alpha=0.1)   # held-out split!
+interval = model.predict_interval(X_test)
+interval.lower, interval.upper
+```
+
+See [Conformal calibration](calibration.md) for methods (`normalized`, `mondrian`,
+`cqr`) and MAPIE interop.
+
 ## Target stabilization
 
 Heavy-tailed error targets are stabilized before training `g`:
@@ -165,10 +179,10 @@ pre-fit estimator) if you want to disable the final refit.
 
 **Included:** `DEUPRegressor`, `DEUPClassifier`, `DEUPRanker`, `acquire`, leakage-correct
 OOF collection, splitters, loss registry, feature builders, `ErrorEstimator`,
-aleatoric estimators, rank-geometry residualization, benchmark.
+aleatoric estimators, rank-geometry residualization, conformal intervals
+(`calibrate` / `predict_interval`, MAPIE interop), benchmark.
 
-**Coming in v0.2+:** conformal intervals (`predict_interval`), aggregation-reliability
-diagnostics, full benchmark suite.
+**Coming next:** aggregation-reliability diagnostics, full benchmark suite.
 
 ## Run the benchmark locally
 

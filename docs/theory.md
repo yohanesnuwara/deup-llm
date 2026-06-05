@@ -163,11 +163,35 @@ flowchart LR
   G --> Unc["predict_epistemic(X)"]
 ```
 
+## Ranking adaptation & two-level deployment
+
+`deup`'s ranking support (`DEUPRanker`, rank loss, rank-geometry residualization) is
+based on Sanderink (2026), which adapts DEUP from regression/classification to
+**cross-sectional ranking** by predicting *rank displacement* and defining an epistemic
+signal $\hat{e}$ relative to a point-in-time (PIT-safe) baseline. Two findings from
+that work are load-bearing in this library:
+
+- **Rank-geometry coupling.** $\hat{e}$ is structurally coupled with signal strength
+  (median per-date correlation between $\hat{e}$ and $|\text{score}|$ ≈ 0.6), so naive
+  inverse-uncertainty sizing de-levers the strongest signals. This motivates the
+  optional rank-geometry residualization in
+  [`RankResidualizer`](decomposition.md) (Finding 3).
+- **Two-level deployment.** Uncertainty is best used as (i) a strategy-level
+  regime-trust gate deciding *whether to trade* and (ii) a position-level **tail-risk
+  cap** — i.e. DEUP adds value mainly as a tail-risk guard rather than a continuous
+  sizing denominator. This informs the aggregation-reliability diagnostics planned for
+  a later release.
+
 ## References
 
 - Lahlou, Jain, Nekoei, Butoi, Bertin, Rector-Brooks, Korablyov, Bengio (2023).
   *DEUP: Direct Epistemic Uncertainty Prediction.* TMLR.
   [arXiv:2102.08501](https://arxiv.org/abs/2102.08501)
+- Sanderink, U. (2026). *When Alpha Breaks: Two-Level Uncertainty for Safe Deployment
+  of Cross-Sectional Stock Rankers.* [arXiv:2603.13252](https://arxiv.org/abs/2603.13252)
+  — the ranking adaptation of DEUP this library implements.
 - Kotelevskii *et al.* (2025a). Bregman-divergence excess risk (formal cover for DEUP).
 - Lee *et al.* (2018). Mahalanobis OOD score (diagonal Gaussian special case).
 - Hüllermeier & Waegeman (2019). Aleatoric vs epistemic uncertainty survey.
+- Romano, Patterson, Candès (2019). *Conformalized Quantile Regression.* NeurIPS.
+- Lei *et al.* (2018). *Distribution-Free Predictive Inference for Regression.* JASA.

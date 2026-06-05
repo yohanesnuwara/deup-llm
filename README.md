@@ -57,9 +57,10 @@ than ensemble disagreement or a conformal residual baseline — see [BENCHMARKS.
 
 **v0.2 (current):** `DEUPRegressor`, `DEUPClassifier`, `DEUPRanker`, `acquire`,
 OOF collector, splitters, full loss registry, feature builders, `ErrorEstimator`,
-aleatoric decomposition, rank residualization, benchmark, docs.
+aleatoric decomposition, rank residualization, conformal intervals
+(`predict_interval` + MAPIE interop), benchmark, docs.
 
-**Next:** conformal intervals (P8), aggregation-reliability diagnostics (P9).
+**Next:** aggregation-reliability diagnostics (P9).
 
 ## Citing
 

@@ -31,6 +31,11 @@ from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostin
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.utils.validation import check_is_fitted
 
+from deup.calibration.conformal import (
+    ConformalMethod,
+    ConformalResult,
+    UncertaintyCalibrator,
+)
 from deup.core.decompose import RankResidualizer, decompose_epistemic
 from deup.core.error_estimator import ErrorEstimator
 from deup.core.losses import TargetTransform
@@ -144,9 +149,7 @@ class _DEUPBase(MetaEstimatorMixin, BaseEstimator):
             fit_groups = None
             if groups is not None:
                 fit_groups = np.asarray(groups)[oof.indices]
-            self._residualizer_ = RankResidualizer().fit(
-                g_raw, np.abs(scores), groups=fit_groups
-            )
+            self._residualizer_ = RankResidualizer().fit(g_raw, np.abs(scores), groups=fit_groups)
 
         if hasattr(X, "shape"):
             self.n_features_in_ = int(X.shape[1])
@@ -210,6 +213,51 @@ class _DEUPBase(MetaEstimatorMixin, BaseEstimator):
         if return_uncertainty:
             return idx, unc[idx]
         return idx
+
+    def calibrate(
+        self,
+        X: Any,
+        y: npt.ArrayLike,
+        *,
+        method: ConformalMethod = "normalized",
+        alpha: float = 0.1,
+        groups: npt.ArrayLike | None = None,
+    ) -> _DEUPBase:
+        """Fit a split-conformal calibrator on a **held-out** set.
+
+        Call after :meth:`fit`, on data the base model and ``g`` did not see, to enable
+        :meth:`predict_interval` with finite-sample marginal coverage ``1 - alpha``.
+
+        Parameters
+        ----------
+        X, y:
+            Held-out calibration inputs and targets.
+        method:
+            ``"normalized"`` (DEUP-scaled, default) or ``"mondrian"`` (per-group).
+        alpha:
+            Miscoverage level; target coverage is ``1 - alpha``.
+        groups:
+            Per-row group labels (required for ``method="mondrian"``; also used for
+            ranker residualization).
+        """
+        check_is_fitted(self, "base_model_")
+        y_pred = np.asarray(self.base_model_.predict(X), dtype=float)
+        unc = self.predict_epistemic(X, groups=groups)
+        self.calibrator_ = UncertaintyCalibrator(method=method, alpha=alpha)
+        self.calibrator_.fit(y, y_pred, unc, groups=groups)
+        return self
+
+    def predict_interval(
+        self,
+        X: Any,
+        *,
+        groups: npt.ArrayLike | None = None,
+    ) -> ConformalResult:
+        """Return calibrated prediction intervals (requires :meth:`calibrate` first)."""
+        check_is_fitted(self, "calibrator_")
+        y_pred = np.asarray(self.base_model_.predict(X), dtype=float)
+        unc = self.predict_epistemic(X, groups=groups)
+        return self.calibrator_.predict_interval(y_pred, unc, groups=groups)
 
 
 class DEUPRegressor(_DEUPBase, RegressorMixin):

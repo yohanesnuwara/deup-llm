@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Conformal calibration** (`deup.calibration`): `UncertaintyCalibrator`
+  (`normalized` / `mondrian` / `cqr`) with finite-sample marginal coverage,
+  `calibrate(...)` + `predict_interval(...)` on all estimators, and a
+  `deup_normalizer` adapter for MAPIE interop (`examples/mapie_interop.py`).
+- Docs: `calibration.md`; added Sanderink (2026) ranking-DEUP paper to theory refs.
+
 ## [0.2.0] — 2026-06-05
 
 ### Added

@@ -38,11 +38,13 @@ nav:
   - Losses & transforms: losses.md
   - Feature builders: features.md
   - Decomposition & ranking: decomposition.md
+  - Conformal calibration: calibration.md
   - Benchmarks: benchmarks.md
   - API:
       - DEUPRegressor: api/estimators.md
       - Feature builders: api/features.md
       - Decomposition: api/decomposition.md
+      - Calibration: api/calibration.md
       - Splitters: api/splitters.md
       - Core: api/core.md
 
