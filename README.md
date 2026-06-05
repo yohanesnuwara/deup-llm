@@ -26,12 +26,13 @@ model.fit(X_train, y_train)
 pred, unc = model.predict(X_test, return_uncertainty=True)
 ```
 
-For time-series / cross-sectional data, pass a leakage-safe splitter:
+For time-series / cross-sectional finance panels:
 
 ```python
-from deup.splitters import PurgedWalkForward
+from deup.domains.finance import CrossSectionalDEUP
 
-model = DEUPRegressor(base_model=my_model, cv=PurgedWalkForward(embargo=5))
+model = CrossSectionalDEUP(horizon=20).fit(panel_df)
+pred, unc = model.predict(test_df, return_uncertainty=True)
 ```
 
 ## Install
@@ -39,6 +40,7 @@ model = DEUPRegressor(base_model=my_model, cv=PurgedWalkForward(embargo=5))
 ```bash
 pip install deup            # core (numpy + scikit-learn)
 pip install "deup[gbm]"     # + LightGBM error predictor
+pip install "deup[finance]" # + pandas (CrossSectionalDEUP)
 pip install "deup[docs]"    # + MkDocs site locally
 ```
 
@@ -55,12 +57,10 @@ than ensemble disagreement or a conformal residual baseline — see [BENCHMARKS.
 
 ## Status / roadmap
 
-**v0.2 (current):** `DEUPRegressor`, `DEUPClassifier`, `DEUPRanker`, `acquire`,
-OOF collector, splitters, full loss registry, feature builders, `ErrorEstimator`,
-aleatoric decomposition, rank residualization, conformal intervals
-(`predict_interval` + MAPIE interop), benchmark, docs.
+**v0.3 (current):** everything in v0.2 plus aggregation-reliability diagnostics
+(Findings 1–2), domain presets (`CrossSectionalDEUP`, `TabularDEUP`, `VisionDEUP`).
 
-**Next:** aggregation-reliability diagnostics (P9).
+**Next:** thesis parity migration (P11), full benchmark suite with N-sweep (P12).
 
 ## Citing
 

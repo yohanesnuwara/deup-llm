@@ -40,6 +40,7 @@ nav:
   - Decomposition & ranking: decomposition.md
   - Conformal calibration: calibration.md
   - Aggregation reliability: reliability.md
+  - Domain presets: domains.md
   - Benchmarks: benchmarks.md
   - API:
       - DEUPRegressor: api/estimators.md
@@ -47,6 +48,7 @@ nav:
       - Decomposition: api/decomposition.md
       - Calibration: api/calibration.md
       - Diagnostics: api/diagnostics.md
+      - Domain presets: api/domains.md
       - Splitters: api/splitters.md
       - Core: api/core.md
 

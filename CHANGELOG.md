@@ -2,17 +2,23 @@
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-06-05
+
 ### Added
 
-- **Conformal calibration** (`deup.calibration`): `UncertaintyCalibrator`
-  (`normalized` / `mondrian` / `cqr`) with finite-sample marginal coverage,
-  `calibrate(...)` + `predict_interval(...)` on all estimators, and a
-  `deup_normalizer` adapter for MAPIE interop (`examples/mapie_interop.py`).
-- Docs: `calibration.md`; added Sanderink (2026) ranking-DEUP paper to theory refs.
 - **Reliability diagnostics** (`deup.diagnostics`): `AggregationReliability` /
-  `should_trust_aggregate` (effective-N + autocorrelation guard for `mean(g)`,
-  Finding 1) and `HealthIndex` (pluggable composite context-reliability index for
-  low-N / non-i.i.d. regimes, Finding 2). Docs: `reliability.md`.
+  `should_trust_aggregate` (Finding 1) and pluggable `HealthIndex` (Finding 2).
+- **Domain presets** (`deup.domains`):
+  - `CrossSectionalDEUP` — finance flagship: `PurgedWalkForward`, rank
+    residualization, vol/breadth/regime g-features, `HealthIndex`, multi-horizon
+    targets, panel DataFrame API.
+  - `TabularDEUP` — KFold + raw X + Mahalanobis density.
+  - `VisionDEUP` — embedding → density + variance for OOD classification.
+- Docs: `reliability.md`, `domains.md`, API pages.
+
+### Changed
+
+- PyPI release bundles P5–P10 features (feature builders through domain presets).
 
 ## [0.2.0] — 2026-06-05
 

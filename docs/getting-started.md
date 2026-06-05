@@ -152,6 +152,21 @@ print(verdict.trustworthy, verdict.reason)
 For low-N / non-i.i.d. (time-series, finance), use the composite `HealthIndex`
 instead. See [When is aggregated DEUP reliable?](reliability.md).
 
+## Cross-sectional finance preset
+
+For panel data (one row per date × asset), use the flagship preset:
+
+```python
+from deup.domains.finance import CrossSectionalDEUP
+
+model = CrossSectionalDEUP(horizon=20, cv=5, embargo=1).fit(panel_df)
+model.calibrate(cal_df, alpha=0.1)
+pred, unc = model.predict(test_df, return_uncertainty=True)
+health = model.health_report(test_df)
+```
+
+See [Domain presets](domains.md) for tabular and vision presets too.
+
 ## Target stabilization
 
 Heavy-tailed error targets are stabilized before training `g`:
@@ -190,14 +205,13 @@ gap is small; under walk-forward the fold models are legitimately smaller (expan
 window), which is the realistic operating regime. Pass `refit_on_all=False` (or a
 pre-fit estimator) if you want to disable the final refit.
 
-## What v0.2 includes / excludes
+## What v0.3 includes / excludes
 
-**Included:** `DEUPRegressor`, `DEUPClassifier`, `DEUPRanker`, `acquire`, leakage-correct
-OOF collection, splitters, loss registry, feature builders, `ErrorEstimator`,
-aleatoric estimators, rank-geometry residualization, conformal intervals
-(`calibrate` / `predict_interval`, MAPIE interop), benchmark.
+**Included:** everything in v0.2 plus aggregation-reliability diagnostics
+(`AggregationReliability`, `HealthIndex`), and domain presets (`CrossSectionalDEUP`,
+`TabularDEUP`, `VisionDEUP`), benchmark.
 
-**Coming next:** aggregation-reliability diagnostics, full benchmark suite.
+**Coming next:** thesis parity migration, full benchmark suite (N-sweep).
 
 ## Run the benchmark locally
 
