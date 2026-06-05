@@ -1,0 +1,50 @@
+{
+  "seed": 42,
+  "data_source": "/Users/ursinasanderink/Downloads/AI Stock Forecast/evaluation_outputs/chapter13_v3/enriched_residuals_tabular_lgb.parquet (H=20, last 35 folds)",
+  "synthetic": false,
+  "final_cutoff": "2024-01-01",
+  "thesis_reference": {
+    "within_context_rho": 0.33,
+    "aggregate_g_auroc_lead5d": 0.55,
+    "health_index_auroc": 0.75,
+    "source": "finance_cifar10c_comparison.md"
+  },
+  "dev": {
+    "split": "DEV",
+    "n_rows": 33887,
+    "n_folds": 16,
+    "spearman_rho_g_rank_loss": 0.24920940718992265,
+    "features": [
+      "score",
+      "abs_score",
+      "vol_20d",
+      "vol_60d",
+      "mom_1m",
+      "adv_20d",
+      "vix_percentile_252d",
+      "market_regime_enc",
+      "market_vol_21d",
+      "market_return_21d",
+      "cross_sectional_rank"
+    ]
+  },
+  "final": {
+    "split": "FINAL",
+    "n_rows": 15969,
+    "n_folds": 8,
+    "spearman_rho_g_rank_loss": 0.16925849160301026,
+    "features": [
+      "score",
+      "abs_score",
+      "vol_20d",
+      "vol_60d",
+      "mom_1m",
+      "adv_20d",
+      "vix_percentile_252d",
+      "market_regime_enc",
+      "market_vol_21d",
+      "market_return_21d",
+      "cross_sectional_rank"
+    ]
+  }
+}

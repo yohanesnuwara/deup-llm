@@ -1,0 +1,18 @@
+{
+  "seed": 42,
+  "split": "DEV",
+  "proxy": true,
+  "n_batches": 30,
+  "n_per_batch": 800,
+  "auroc_agg_g_oracle": 1.0,
+  "auroc_agg_g_vision_deup": 0.0,
+  "thesis_reference": {
+    "split": "FINAL",
+    "n_batches": 95,
+    "n_per_batch": 10000,
+    "spearman_agg_g_vs_batch_error": 0.926,
+    "auroc_agg_g_broken_batch": 0.955,
+    "source": "research/experiments/cifar10c_aggregation/results/aggregation_summary.json"
+  },
+  "note": "Oracle g validates aggregation at high-N i.i.d. scale; VisionDEUP reports end-to-end embedding\u2192density\u2192g on scaled CPU proxy. Thesis FINAL: 95\u00d710k batches."
+}

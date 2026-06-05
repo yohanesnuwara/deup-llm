@@ -27,3 +27,11 @@ def test_ensemble_benchmark_helper_on_tiny_data() -> None:
     out = benchmark_ensemble(X_tr, y_tr, X_te, y_te, seed=0)
     assert np.isfinite(out["spearman"])
     assert out["unc_mean"] >= 0.0
+
+
+def test_n_sweep_iid_row_smoke() -> None:
+    from benchmarks.run_n_sweep import run_iid_n_sweep
+
+    rows = run_iid_n_sweep(ns=[50], max_total_samples=5_000)
+    assert len(rows) == 1
+    assert float(rows[0]["auroc_agg_g"]) > 0.5

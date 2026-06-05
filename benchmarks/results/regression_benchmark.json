@@ -1,10 +1,12 @@
 {
+  "seed": 0,
+  "split": "DEV",
   "dataset": "california_housing",
   "test_n": 4128,
   "methods": {
     "deup": {
-      "spearman": 0.5097286523223603,
-      "unc_mean": 0.0637639333865893
+      "spearman": 0.5090254767317876,
+      "unc_mean": 0.0631542871963915
     },
     "ensemble_disagreement": {
       "spearman": 0.45962140866462203,
@@ -13,28 +15,10 @@
     "conformal_residual": {
       "spearman": 0.4468310729676652,
       "unc_mean": 0.33888994978284437
+    },
+    "laplace_bayesian_ridge": {
+      "spearman": 0.014733426622989607,
+      "unc_mean": 0.5241891979026926
     }
-  },
-  "n_sweep_teaser": [
-    {
-      "n_per_context": 10,
-      "n_contexts": 800,
-      "agg_spearman": 0.6104723601130628
-    },
-    {
-      "n_per_context": 50,
-      "n_contexts": 160,
-      "agg_spearman": 0.5772002812609868
-    },
-    {
-      "n_per_context": 200,
-      "n_contexts": 40,
-      "agg_spearman": 0.6639774859287055
-    },
-    {
-      "n_per_context": 1000,
-      "n_contexts": 20,
-      "agg_spearman": 0.4977443609022556
-    }
-  ]
+  }
 }

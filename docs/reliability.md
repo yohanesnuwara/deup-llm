@@ -90,6 +90,14 @@ summed into a "badness" score, then mapped to a health score in $[0, 1]$ with a 
 threshold. Keep it **off** the high-N i.i.d. default path — there, individual-level `g`
 already saturates and the composite is unnecessary.
 
+## Empirical N-sweep (benchmark)
+
+The [N-sweep benchmark](benchmarks.md) reproduces Finding 1 on controlled synthetic
+data: AUROC(agg_g) rises to **≈0.96** at high N (i.i.d.), while low-N autocorrelated
+contexts stay near-chance and **HealthIndex** recovers detection.
+
+![N-sweep](assets/n_sweep.png)
+
 ## Reference
 
 Sanderink (2026), *When Alpha Breaks: Two-Level Uncertainty for Safe Deployment of

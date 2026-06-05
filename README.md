@@ -52,15 +52,16 @@ The only public DEUP code is a 3-year-old research repo of notebooks; no maintai
 fills that gap with **correct out-of-fold error construction** for time-series /
 cross-sectional data.
 
-On California housing (v0.1 benchmark), DEUP uncertainty ranks test errors better
-than ensemble disagreement or a conformal residual baseline — see [BENCHMARKS.md](BENCHMARKS.md).
+- **Benchmarked** — see [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/) (DEUP vs ensembles/conformal/Laplace; N-sweep)
 
 ## Status / roadmap
 
-**v0.3 (current):** everything in v0.2 plus aggregation-reliability diagnostics
-(Findings 1–2), domain presets (`CrossSectionalDEUP`, `TabularDEUP`, `VisionDEUP`).
+**v0.3 (current):** full stack through P12 benchmarks — see [Benchmarks](https://ursinasanderink.github.io/deup/benchmarks/).
 
-**Next:** thesis parity migration (P11), full benchmark suite with N-sweep (P12).
+**Next:** P13 doc polish (tutorials + CI doctests), P14 community/release.
+
+**Future model presets:** XGBoost/CatBoost tabular; torchvision ResNet-18 → `VisionDEUP`;
+HuggingFace encoders; PyTorch Lightning integration.
 
 ## Citing
 

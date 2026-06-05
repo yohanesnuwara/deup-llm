@@ -1,0 +1,60 @@
+{
+  "seed": 42,
+  "reference_points": {
+    "finance_auroc_n50": 0.55,
+    "cifar_auroc_n10000": 0.955,
+    "thesis_health_auroc": 0.75
+  },
+  "iid_sweep": [
+    {
+      "regime": "iid",
+      "split": "DEV",
+      "n_per_context": 50,
+      "n_contexts": 800,
+      "auroc_agg_g": 0.8095749999999999,
+      "spearman_agg_g_vs_error": 0.5775502425892659
+    },
+    {
+      "regime": "iid",
+      "split": "DEV",
+      "n_per_context": 200,
+      "n_contexts": 200,
+      "auroc_agg_g": 0.9163999999999999,
+      "spearman_agg_g_vs_error": 0.8099043494479017
+    },
+    {
+      "regime": "iid",
+      "split": "DEV",
+      "n_per_context": 1000,
+      "n_contexts": 40,
+      "auroc_agg_g": 0.96,
+      "spearman_agg_g_vs_error": 0.9265018161120582
+    },
+    {
+      "regime": "iid",
+      "split": "DEV",
+      "n_per_context": 5000,
+      "n_contexts": 30,
+      "auroc_agg_g": 0.8977272727272727,
+      "spearman_agg_g_vs_error": 0.8990551893541968
+    },
+    {
+      "regime": "iid",
+      "split": "DEV",
+      "n_per_context": 10000,
+      "n_contexts": 30,
+      "auroc_agg_g": 0.9204545454545454,
+      "spearman_agg_g_vs_error": 0.9140211314485653
+    }
+  ],
+  "low_n_health": {
+    "regime": "autocorr_low_n",
+    "split": "DEV",
+    "n_per_context": 50,
+    "n_contexts": 200,
+    "auroc_agg_g": 0.43476190476190474,
+    "auroc_health_index": 1.0,
+    "health_lift": 0.5652380952380953
+  },
+  "figure": "n_sweep.png"
+}

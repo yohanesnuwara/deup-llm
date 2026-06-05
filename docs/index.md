@@ -5,10 +5,12 @@
 DEUP (Lahlou et al., 2023) estimates *epistemic* uncertainty by training a secondary
 **error predictor** on your model's **out-of-sample** errors. This library provides a
 maintained, installable, scikit-learn-compatible implementation with first-class
-support for time-series and cross-sectional workflows.
+support for time-series, cross-sectional ranking, conformal intervals, and
+research-grade reliability diagnostics.
 
 ```bash
 pip install deup
+pip install "deup[finance,gbm]"   # pandas + LightGBM presets
 ```
 
 ```python
@@ -18,36 +20,44 @@ from deup import DEUPRegressor
 model = DEUPRegressor(base_model=RandomForestRegressor())
 model.fit(X_train, y_train)
 pred, unc = model.predict(X_test, return_uncertainty=True)
-
-# Active learning: pick the 10 most uncertain points
-idx = model.acquire(X_pool, k=10)
 ```
 
-For classification or cross-sectional ranking:
+Cross-sectional finance panel:
 
 ```python
-from deup import DEUPClassifier, DEUPRanker
+from deup.domains.finance import CrossSectionalDEUP
 
-clf = DEUPClassifier(base_model=my_classifier).fit(X, y)
-ranker = DEUPRanker(base_model=my_ranker).fit(X, y, groups=dates)
+model = CrossSectionalDEUP(horizon=20).fit(panel_df)
+pred, unc = model.predict(test_df, return_uncertainty=True)
+health = model.health_report(test_df)
 ```
 
 ## Why deup?
 
-- **Works with models you already use** — RandomForest, LightGBM, linear models, etc.
-- **Leakage-correct by default** — out-of-fold errors, not in-sample residuals
-- **Time-series ready** — `PurgedWalkForward` with embargo for walk-forward panels
-- **Benchmarked** — see [Benchmarks](benchmarks.md)
+- **Works with models you already use** — sklearn, LightGBM, any `fit`/`predict` API
+- **Leakage-correct by default** — out-of-fold errors (Algorithm 2), purged walk-forward
+- **Time-series & ranking** — `DEUPRanker`, rank-geometry residualization, `HealthIndex`
+- **Calibrated intervals** — split-conformal `predict_interval()` + MAPIE interop
+- **Benchmarked** — DEUP beats ensembles/conformal on tabular; N-sweep validates Finding 1
+
+## Documentation map
+
+| Topic | Page |
+|---|---|
+| Quickstart | [Getting started](getting-started.md) |
+| Math & algorithms | [Theory & math](theory.md) |
+| When is agg-g reliable? | [Aggregation reliability](reliability.md) |
+| Finance / vision presets | [Domain presets](domains.md) |
+| Thesis migration | [Migrating from thesis](migration.md) |
+| Benchmarks & N-sweep | [Benchmarks](benchmarks.md) |
 
 ## Attribution
 
 DEUP the *method* is due to Lahlou, Jain, Nekoei, Butoi, Bertin, Rector-Brooks,
-Korablyov, and Bengio (2023, TMLR). This package is an independent library
-implementation; please cite both the paper and this software (`CITATION.cff`).
+Korablyov, and Bengio (2023, TMLR). Ranking adaptations and two-level deployment
+build on Sanderink (2026). Please cite both papers and this software (`CITATION.cff`).
 
-## Next steps
+## Status
 
-- [Getting started](getting-started.md) — install, fit, interpret uncertainty
-- [Theory & math](theory.md) — risk decomposition, DEUP algorithms, stationarizing features
-- [Losses & transforms](losses.md) — squared, Brier, pinball, rank, log/asinh targets
-- [Feature builders](features.md) — density, variance, seen-bit for $g(x)$
+**v0.3** — estimators, features, conformal calibration, diagnostics (Findings 1–2),
+domain presets, thesis parity, benchmark suite. See [CHANGELOG](https://github.com/ursinasanderink/deup/blob/main/CHANGELOG.md).

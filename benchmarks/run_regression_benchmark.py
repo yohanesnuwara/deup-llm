@@ -14,12 +14,10 @@ Run:
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.stats import spearmanr
 from sklearn.datasets import fetch_california_housing
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
@@ -30,12 +28,33 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from benchmarks.common import spearman_unc_vs_sqerr  # noqa: E402
 from deup import DEUPRegressor  # noqa: E402
 
 
 def _spearman_unc_vs_sqerr(unc: np.ndarray, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    realized = (y_true - y_pred) ** 2
-    return float(spearmanr(unc, realized).statistic)
+    return spearman_unc_vs_sqerr(unc, y_true, y_pred)
+
+
+def benchmark_laplace(
+    X_tr: np.ndarray,
+    y_tr: np.ndarray,
+    X_te: np.ndarray,
+    y_te: np.ndarray,
+    *,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Laplace / Gaussian posterior baseline (BayesianRidge predictive variance)."""
+    from sklearn.linear_model import BayesianRidge
+
+    model = BayesianRidge()
+    model.fit(X_tr, y_tr)
+    pred, std = model.predict(X_te, return_std=True)
+    unc = np.clip(std**2, 0.0, None)
+    return {
+        "spearman": _spearman_unc_vs_sqerr(unc, y_te, pred),
+        "unc_mean": float(unc.mean()),
+    }
 
 
 def benchmark_deup(
@@ -114,79 +133,32 @@ def benchmark_conformal_residual(
     }
 
 
-def n_sweep_teaser(*, seed: int = 0) -> list[dict[str, float]]:
-    """Teaser for Finding 1: aggregate g tracks context error better as N grows."""
-    from deup.splitters import KFold
-
-    rng = np.random.default_rng(seed)
-    rows = []
-    for n_per_context in [10, 50, 200, 1000]:
-        n_contexts = max(20, 8000 // n_per_context)
-        X_parts, y_parts = [], []
-        for _ in range(n_contexts):
-            Xc = rng.normal(size=(n_per_context, 4))
-            # heteroscedastic noise by |x0|
-            noise = rng.normal(size=n_per_context) * (0.2 + 2.0 * np.abs(Xc[:, 0]))
-            yc = Xc[:, 1] + noise
-            X_parts.append(Xc)
-            y_parts.append(yc)
-        X = np.vstack(X_parts)
-        y = np.concatenate(y_parts)
-        groups = np.repeat(np.arange(n_contexts), n_per_context)
-
-        deup = DEUPRegressor(
-            base_model=RandomForestRegressor(n_estimators=40, random_state=seed),
-            cv=KFold(n_splits=5, shuffle=True, random_state=seed),
-            random_state=seed,
-        )
-        deup.fit(X, y)
-        unc = deup.predict_epistemic(X)
-
-        # context-level: mean g vs mean realized sq error
-        ctx_g = []
-        ctx_err = []
-        pred = deup.base_model_.predict(X)
-        sq = (y - pred) ** 2
-        for g in range(n_contexts):
-            mask = groups == g
-            ctx_g.append(float(unc[mask].mean()))
-            ctx_err.append(float(sq[mask].mean()))
-        rho = float(spearmanr(ctx_g, ctx_err).statistic)
-        rows.append({"n_per_context": n_per_context, "n_contexts": n_contexts, "agg_spearman": rho})
-    return rows
-
-
 def main() -> None:
     X, y = fetch_california_housing(return_X_y=True)
     X = StandardScaler().fit_transform(X)
     X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2, random_state=0)
 
     results = {
+        "seed": 0,
+        "split": "DEV",
         "dataset": "california_housing",
         "test_n": len(y_te),
         "methods": {
             "deup": benchmark_deup(X_tr, y_tr, X_te, y_te),
             "ensemble_disagreement": benchmark_ensemble(X_tr, y_tr, X_te, y_te),
             "conformal_residual": benchmark_conformal_residual(X_tr, y_tr, X_te, y_te),
+            "laplace_bayesian_ridge": benchmark_laplace(X_tr, y_tr, X_te, y_te),
         },
-        "n_sweep_teaser": n_sweep_teaser(),
     }
 
-    out_dir = Path(__file__).parent / "results"
-    out_dir.mkdir(exist_ok=True)
-    out_path = out_dir / "regression_benchmark.json"
-    out_path.write_text(json.dumps(results, indent=2) + "\n")
+    from benchmarks.common import write_json
+
+    out_path = write_json("regression_benchmark.json", results)
 
     print("=== Regression uncertainty benchmark (California housing) ===")
     print(f"test n = {results['test_n']}")
     for name, metrics in results["methods"].items():
         print(f"  {name:24s} Spearman={metrics['spearman']:.4f}")
-    print("\n=== N-sweep teaser (context-level agg Spearman) ===")
-    for row in results["n_sweep_teaser"]:
-        print(
-            f"  N={row['n_per_context']:4d}/context  "
-            f"contexts={row['n_contexts']:3d}  agg_rho={row['agg_spearman']:.4f}"
-        )
     print(f"\nWrote {out_path}")
 
 

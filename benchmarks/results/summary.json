@@ -1,0 +1,13 @@
+{
+  "seed": 42,
+  "benchmarks": [
+    "regression_benchmark.json",
+    "n_sweep.json",
+    "cifar_proxy.json",
+    "finance_walkforward.json"
+  ],
+  "figures": [
+    "n_sweep.png"
+  ],
+  "generated_by": "benchmarks/run_all.py"
+}

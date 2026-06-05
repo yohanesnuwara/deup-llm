@@ -1,52 +1,53 @@
 # Benchmarks
 
-Reproducible uncertainty-quality comparisons for `deup`.
+Reproducible uncertainty-quality comparisons for `deup`. All scripts use **seed=42**
+and write JSON tables under `benchmarks/results/`.
 
 ## Quick run
 
 ```bash
-pip install -e ".[dev]"
-python benchmarks/run_regression_benchmark.py
+pip install -e ".[dev,benchmark,gbm,finance]" pyarrow
+python benchmarks/run_all.py
 ```
 
-Results are written to `benchmarks/results/regression_benchmark.json`.
+See the full write-up in [BENCHMARKS.md](https://github.com/ursinasanderink/deup/blob/main/BENCHMARKS.md)
+in the repository root (tables are committed from the last benchmark run).
 
-## Regression benchmark (California housing)
+---
 
-**Question:** which method best *ranks* test points by realized squared error?
+## Tabular regression (California housing)
 
-**Metric:** Spearman correlation between each method's uncertainty score and
-`(y - ŷ)²` on a held-out test set (n=4,128). Higher is better.
-
-| Method | Spearman | Notes |
+| Method | Spearman ρ | Notes |
 |---|---:|---|
-| **DEUP** | **0.510** | `DEUPRegressor` + RF base |
-| Ensemble disagreement | 0.460 | 5 bootstrap RF members, prediction variance |
-| Conformal residual | 0.447 | Cal-set model for `\|residual\|` magnitude |
+| **DEUP** | **0.509** | `DEUPRegressor` + RF |
+| Ensemble disagreement | 0.460 | Bootstrap variance |
+| Conformal residual | 0.447 | Cal-set \|residual\| model |
+| Laplace (BayesianRidge) | 0.015 | Posterior variance |
 
-DEUP wins on this tabular regression task — the uncertainty score tracks which
-predictions are likely to be wrong better than the two sklearn-only baselines.
+---
 
-### N-sweep teaser (context-level aggregation)
+## N-sweep — Finding 1 (headline)
 
-Synthetic heteroscedastic panels; for each context size N we report Spearman
-between **mean g(x)** per context and **mean realized squared error** per context.
+![N-sweep AUROC vs context size](assets/n_sweep.png)
 
-| N / context | # contexts | agg Spearman |
-|---:|---:|---:|
-| 10 | 800 | 0.611 |
-| 50 | 160 | 0.577 |
-| 200 | 40 | 0.664 |
-| 1000 | 20 | 0.498 |
+**i.i.d. contexts:** AUROC(agg_g) rises to **≈0.96** at N≈1,000–10,000 (CIFAR thesis ref ≈0.955).
 
-This is a **teaser**, not the full finance/CIFAR cross-domain study from the thesis.
-At very small numbers of contexts (N=1000 → only 20 contexts) the aggregate
-estimate is noisy. The full `AggregationReliability` diagnostic (v0.2) will formalize
-when aggregated DEUP is trustworthy.
+**Low-N autocorrelated:** AUROC(agg_g)≈**0.43** (finance ref ≈0.55); **HealthIndex** recovers
+to AUROC≈**1.0** on the synthetic proxy (thesis ref ≈0.75 on real FINAL holdout).
 
-## Not yet benchmarked (v0.2+)
+Details: [Aggregation reliability](reliability.md).
 
-- MC-Dropout (requires `[torch]`)
-- MAPIE interop
-- Time-series / purged walk-forward on real finance panel
-- CIFAR-10-C OOD reproduction
+---
+
+## CIFAR & finance
+
+- **CIFAR proxy:** oracle agg-g AUROC **1.0** on high-N i.i.d. batch simulation (thesis **0.955**)
+- **Finance walk-forward:** ρ(g, rank_loss)=**0.25** DEV / **0.17** FINAL on Ch13 v3 subset;
+  exact parity with frozen thesis `g_pred` documented in [Migrating from thesis](migration.md)
+
+---
+
+## Future work
+
+XGBoost/CatBoost tabular presets; torchvision ResNet-18 → `VisionDEUP`; HuggingFace encoders;
+PyTorch Lightning hooks — see the project roadmap.
