@@ -871,6 +871,7 @@ name = "deup"
 version = "0.4.2"
 source = { editable = "." }
 dependencies = [
+    { name = "accelerate" },
     { name = "datasets" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -941,6 +942,7 @@ xgb = [
 
 [package.metadata]
 requires-dist = [
+    { name = "accelerate", specifier = ">=1.13.0" },
     { name = "accelerate", marker = "extra == 'llm'", specifier = ">=0.28" },
     { name = "catboost", marker = "extra == 'catboost'", specifier = ">=1.2" },
     { name = "catboost", marker = "extra == 'gbm-all'", specifier = ">=1.2" },
