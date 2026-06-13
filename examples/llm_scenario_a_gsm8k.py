@@ -70,7 +70,7 @@ def main() -> None:
     parser.add_argument("--output", default="llm_deup_gsm8k_results.json")
     args = parser.parse_args()
 
-    dataset = load_dataset("gsm8k", "main")
+    dataset = load_dataset("openai/gsm8k", "main")
     train_split = dataset["train"].select(range(args.train_size))
     test_split = dataset["test"].select(range(args.test_size))
 
