@@ -73,6 +73,21 @@ class LLMDEUPPrediction:
     features: FeatureDict
 
 
+@dataclass(frozen=True)
+class LLMErrorDataset:
+    """Cached Scenario-A data for fitting and downstream reuse.
+
+    This dataset stores the expensive frozen-LLM forward pass outputs together
+    with tabularized features and computed benchmark errors.
+    """
+
+    feature_dicts: list[FeatureDict]
+    feature_matrix: npt.NDArray[Any]
+    feature_names: list[str]
+    answers: list[str]
+    errors: npt.NDArray[Any]
+
+
 def normalize_text(text: str) -> str:
     """Normalize free-form answers for exact-match style evaluation.
 
@@ -458,6 +473,51 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
             answers.append(result.answer)
         return feature_dicts, answers
 
+    def collect(
+        self,
+        prompts: Sequence[str],
+        references: Sequence[str],
+        *,
+        loss_fn: TextLossFn = exact_match_loss,
+        show_progress: bool = False,
+    ) -> LLMErrorDataset:
+        """Run frozen-LLM generation once and cache all fit-ready artifacts."""
+
+        if len(prompts) != len(references):
+            raise ValueError("prompts and references must have the same length")
+
+        feature_dicts, answers = self.make_feature_records(prompts, show_progress=show_progress)
+        errors = np.asarray(
+            [float(loss_fn(answer, reference)) for answer, reference in zip(answers, references)],
+            dtype=float,
+        )
+        feature_matrix, feature_names = self.dicts_to_matrix(feature_dicts)
+        return LLMErrorDataset(
+            feature_dicts=feature_dicts,
+            feature_matrix=feature_matrix,
+            feature_names=feature_names,
+            answers=answers,
+            errors=errors,
+        )
+
+    def fit_from_collected(self, dataset: LLMErrorDataset) -> LLMDEUPRiskEstimator:
+        """Fit the DEUP error predictor from a previously collected dataset."""
+
+        self.feature_names_ = list(dataset.feature_names)
+        self.training_answers_ = list(dataset.answers)
+        self.training_errors_ = np.asarray(dataset.errors, dtype=float)
+        self.training_feature_dicts_ = list(dataset.feature_dicts)
+        self.training_feature_matrix_ = np.asarray(dataset.feature_matrix, dtype=float)
+        self.collected_dataset_ = dataset
+
+        self.error_estimator_ = ErrorEstimator(
+            model=self.error_model,
+            features=None,
+            target_transform=self.target_transform,
+        )
+        self.error_estimator_.fit(self.training_feature_matrix_, self.training_errors_)
+        return self
+
     def fit(
         self,
         prompts: Sequence[str],
@@ -466,26 +526,16 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
         loss_fn: TextLossFn = exact_match_loss,
         show_progress: bool = False,
     ) -> LLMDEUPRiskEstimator:
-        """Generate benchmark answers, compute losses, and fit the DEUP error predictor."""
+        """Collect benchmark artifacts and fit the DEUP error predictor."""
 
-        if len(prompts) != len(references):
-            raise ValueError("prompts and references must have the same length")
-        feature_dicts, answers = self.make_feature_records(prompts, show_progress=show_progress)
-        errors = np.asarray(
-            [float(loss_fn(answer, reference)) for answer, reference in zip(answers, references)],
-            dtype=float,
+        return self.fit_from_collected(
+            self.collect(
+                prompts,
+                references,
+                loss_fn=loss_fn,
+                show_progress=show_progress,
+            )
         )
-        X, names = self.dicts_to_matrix(feature_dicts)
-        self.feature_names_ = names
-        self.training_answers_ = answers
-        self.training_errors_ = errors
-        self.error_estimator_ = ErrorEstimator(
-            model=self.error_model,
-            features=None,
-            target_transform=self.target_transform,
-        )
-        self.error_estimator_.fit(X, errors)
-        return self
 
     def predict_risk_from_features(self, features: Mapping[str, float]) -> float:
         """Predict risk from an already-computed feature dictionary."""

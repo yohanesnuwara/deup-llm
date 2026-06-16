@@ -9,8 +9,18 @@ from __future__ import annotations
 __all__: list[str] = []
 
 try:
-    from deup.domains.llm import HFGenerationConfig, LLMDEUPRiskEstimator, LLMTokenFeatureExtractor
+    from deup.domains.llm import (
+        HFGenerationConfig,
+        LLMDEUPRiskEstimator,
+        LLMErrorDataset,
+        LLMTokenFeatureExtractor,
+    )
 except Exception:  # pragma: no cover - optional LLM dependencies may be absent
     pass
 else:
-    __all__ += ["HFGenerationConfig", "LLMDEUPRiskEstimator", "LLMTokenFeatureExtractor"]
+    __all__ += [
+        "HFGenerationConfig",
+        "LLMDEUPRiskEstimator",
+        "LLMErrorDataset",
+        "LLMTokenFeatureExtractor",
+    ]

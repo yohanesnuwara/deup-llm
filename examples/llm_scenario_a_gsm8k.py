@@ -43,7 +43,14 @@ from deup.domains.llm import (
 )
 
 
-def build_gsm8k_prompt(question: str) -> str:
+def build_gsm8k_prompt(question: str, *, number_only_output: bool = False) -> str:
+    if number_only_output:
+        return (
+            "Solve the math problem. Output only the final numeric answer. "
+            "No words, no explanation, no punctuation.\n\n"
+            f"Problem: {question}\n"
+            "Answer:"
+        )
     return (
         "Solve the math problem. Show brief reasoning, then end with 'Answer: <number>'.\n\n"
         f"Problem: {question}\n"
@@ -66,6 +73,11 @@ def main() -> None:
     parser.add_argument("--test-size", type=int, default=25)
     parser.add_argument("--max-new-tokens", type=int, default=128)
     parser.add_argument("--semantic-samples", type=int, default=0)
+    parser.add_argument(
+        "--number-only-output",
+        action="store_true",
+        help="Use a strict prompt that asks for only a final number.",
+    )
     parser.add_argument("--device-map", default=None)
     parser.add_argument("--output", default="llm_deup_gsm8k_results.json")
     args = parser.parse_args()
@@ -74,9 +86,15 @@ def main() -> None:
     train_split = dataset["train"].select(range(args.train_size))
     test_split = dataset["test"].select(range(args.test_size))
 
-    train_prompts = [build_gsm8k_prompt(row["question"]) for row in train_split]
+    train_prompts = [
+        build_gsm8k_prompt(row["question"], number_only_output=args.number_only_output)
+        for row in train_split
+    ]
     train_refs = [gsm8k_reference(row["answer"]) for row in train_split]
-    test_prompts = [build_gsm8k_prompt(row["question"]) for row in test_split]
+    test_prompts = [
+        build_gsm8k_prompt(row["question"], number_only_output=args.number_only_output)
+        for row in test_split
+    ]
     test_refs = [gsm8k_reference(row["answer"]) for row in test_split]
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_id)
