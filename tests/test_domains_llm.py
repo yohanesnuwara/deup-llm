@@ -124,3 +124,107 @@ def test_fit_delegates_to_collect_and_fit_from_collected(monkeypatch: Any) -> No
 
     assert returned is estimator
     assert calls == ["collect", "fit_from_collected"]
+
+
+def test_generate_uses_chat_template_when_enabled(monkeypatch: Any) -> None:
+    class _FakeTensor:
+        shape = (1, 3)
+
+        def to(self, device: str) -> _FakeTensor:
+            return self
+
+        def __getitem__(self, key: slice) -> list[int]:
+            return [4, 5]
+
+    class _FakeTokenizer:
+        eos_token_id = 0
+        pad_token_id = 0
+
+        def __init__(self) -> None:
+            self.messages: list[dict[str, str]] | None = None
+
+        def apply_chat_template(self, messages: list[dict[str, str]], **_: Any) -> dict[str, Any]:
+            self.messages = messages
+            return {"input_ids": _FakeTensor()}
+
+        def decode(self, generated_ids: Any, skip_special_tokens: bool = True) -> str:
+            return "42"
+
+    class _FakeOutputs:
+        sequences = [_FakeTensor()]
+        scores = [0.0]
+
+    class _FakeModel:
+        device = "cpu"
+
+        def generate(self, **_: Any) -> _FakeOutputs:
+            return _FakeOutputs()
+
+    class _NoGrad:
+        def __enter__(self) -> None:
+            return None
+
+        def __exit__(self, *args: Any) -> None:
+            return None
+
+    tokenizer = _FakeTokenizer()
+    estimator = LLMDEUPRiskEstimator(
+        model=_FakeModel(),
+        tokenizer=tokenizer,
+        use_chat_template=True,
+        system_prompt="Return only numbers.",
+    )
+
+    monkeypatch.setattr("torch.no_grad", lambda: _NoGrad())
+
+    result = estimator.generate_with_scores("What is 40 + 2?")
+
+    assert result.answer == "42"
+    assert tokenizer.messages == [
+        {"role": "system", "content": "Return only numbers."},
+        {"role": "user", "content": "What is 40 + 2?"},
+    ]
+
+
+def test_generate_applies_answer_postprocessor(monkeypatch: Any) -> None:
+    class _FakeTensor:
+        shape = (1, 1)
+
+        def __getitem__(self, key: slice) -> list[int]:
+            return [2]
+
+    class _FakeTokenizer:
+        pad_token_id = 0
+
+        def __call__(self, prompt: str, return_tensors: str) -> dict[str, Any]:
+            return {"input_ids": _FakeTensor()}
+
+        def decode(self, generated_ids: Any, skip_special_tokens: bool = True) -> str:
+            return "The answer is 42."
+
+    class _FakeOutputs:
+        sequences = [_FakeTensor()]
+        scores = [0.0]
+
+    class _FakeModel:
+        device = None
+
+        def generate(self, **_: Any) -> _FakeOutputs:
+            return _FakeOutputs()
+
+    class _NoGrad:
+        def __enter__(self) -> None:
+            return None
+
+        def __exit__(self, *args: Any) -> None:
+            return None
+
+    estimator = LLMDEUPRiskEstimator(
+        model=_FakeModel(),
+        tokenizer=_FakeTokenizer(),
+        answer_postprocessor=lambda answer: "42" if "42" in answer else answer,
+    )
+
+    monkeypatch.setattr("torch.no_grad", lambda: _NoGrad())
+
+    assert estimator.generate_with_scores("prompt").answer == "42"

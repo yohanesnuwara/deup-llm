@@ -321,6 +321,16 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
         Number of repeated samples for semantic entropy. Set to 0 to disable.
     semantic_normalizer:
         Normalizer used to cluster repeated generations.
+    use_chat_template:
+        If ``True``, format each prompt with the tokenizer's chat template before
+        generation. This is recommended for instruction-tuned chat models such as
+        Qwen Instruct.
+    system_prompt:
+        Optional system message used when ``use_chat_template=True``.
+    answer_postprocessor:
+        Optional callable applied to decoded model text before storing answers
+        and computing losses. Useful for numeric benchmarks where the final
+        number is the task answer even if the model emits short surrounding text.
     """
 
     def __init__(
@@ -336,6 +346,9 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
         sample_generation_config: HFGenerationConfig | None = None,
         n_semantic_samples: int = 0,
         semantic_normalizer: Callable[[str], str] = normalize_text,
+        use_chat_template: bool = False,
+        system_prompt: str | None = None,
+        answer_postprocessor: Callable[[str], str] | None = None,
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -347,6 +360,36 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
         self.sample_generation_config = sample_generation_config
         self.n_semantic_samples = n_semantic_samples
         self.semantic_normalizer = semantic_normalizer
+        self.use_chat_template = use_chat_template
+        self.system_prompt = system_prompt
+        self.answer_postprocessor = answer_postprocessor
+
+    def _tokenize_prompt(self, prompt: str) -> Mapping[str, Any]:
+        if not self.use_chat_template:
+            return self.tokenizer(prompt, return_tensors="pt")
+
+        if not hasattr(self.tokenizer, "apply_chat_template"):
+            raise ValueError("use_chat_template=True requires a tokenizer with apply_chat_template")
+
+        messages: list[dict[str, str]] = []
+        if self.system_prompt:
+            messages.append({"role": "system", "content": self.system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        try:
+            return self.tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                return_tensors="pt",
+                return_dict=True,
+            )
+        except TypeError:
+            input_ids = self.tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                return_tensors="pt",
+            )
+            return {"input_ids": input_ids}
 
     def generate_with_scores(
         self,
@@ -363,7 +406,7 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
             raise ImportError('LLM utilities require torch: pip install "deup[llm]"') from exc
 
         cfg = config or self.generation_config or HFGenerationConfig()
-        inputs = self.tokenizer(prompt, return_tensors="pt")
+        inputs = self._tokenize_prompt(prompt)
         device = getattr(self.model, "device", None)
         if device is not None:
             inputs = {k: v.to(device) for k, v in inputs.items()}
@@ -393,6 +436,8 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
         prompt_len = inputs["input_ids"].shape[1]
         generated_ids = sequence[prompt_len:]
         answer = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+        if self.answer_postprocessor is not None:
+            answer = self.answer_postprocessor(answer)
         return LLMGenerationResult(
             prompt=prompt,
             answer=answer,
