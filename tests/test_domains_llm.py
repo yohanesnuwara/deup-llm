@@ -228,3 +228,60 @@ def test_generate_applies_answer_postprocessor(monkeypatch: Any) -> None:
     monkeypatch.setattr("torch.no_grad", lambda: _NoGrad())
 
     assert estimator.generate_with_scores("prompt").answer == "42"
+
+
+def test_generate_retries_with_eager_experts_on_grouped_mm_capability_error(
+    monkeypatch: Any,
+) -> None:
+    class _FakeTensor:
+        shape = (1, 1)
+
+        def __getitem__(self, key: slice) -> list[int]:
+            return [2]
+
+    class _FakeTokenizer:
+        pad_token_id = 0
+
+        def __call__(self, prompt: str, return_tensors: str) -> dict[str, Any]:
+            return {"input_ids": _FakeTensor()}
+
+        def decode(self, generated_ids: Any, skip_special_tokens: bool = True) -> str:
+            return "ok"
+
+    class _FakeOutputs:
+        sequences = [_FakeTensor()]
+        scores = [0.0]
+
+    class _FakeConfig:
+        _experts_implementation = "grouped_mm"
+
+    class _FakeModel:
+        device = None
+
+        def __init__(self) -> None:
+            self.config = _FakeConfig()
+            self.calls = 0
+
+        def generate(self, **_: Any) -> _FakeOutputs:
+            self.calls += 1
+            if self.calls == 1:
+                raise RuntimeError("torch._grouped_mm is only supported on CUDA devices with compute capability = 9.0")
+            return _FakeOutputs()
+
+    class _NoGrad:
+        def __enter__(self) -> None:
+            return None
+
+        def __exit__(self, *args: Any) -> None:
+            return None
+
+    model = _FakeModel()
+    estimator = LLMDEUPRiskEstimator(model=model, tokenizer=_FakeTokenizer())
+
+    monkeypatch.setattr("torch.no_grad", lambda: _NoGrad())
+
+    result = estimator.generate_with_scores("prompt")
+
+    assert result.answer == "ok"
+    assert model.calls == 2
+    assert model.config._experts_implementation == "eager"

@@ -25,6 +25,7 @@ import math
 import re
 import string
 from typing import Any, Literal
+import warnings
 
 import numpy as np
 import numpy.typing as npt
@@ -391,6 +392,26 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
             )
             return {"input_ids": input_ids}
 
+    @staticmethod
+    def _is_grouped_mm_capability_error(exc: RuntimeError) -> bool:
+        """Return True for known grouped-mm capability mismatch runtime errors."""
+
+        msg = str(exc)
+        return "torch._grouped_mm is only supported on CUDA devices" in msg
+
+    def _force_eager_experts_implementation(self) -> bool:
+        """Force Transformers MoE experts path to eager mode when available."""
+
+        config = getattr(self.model, "config", None)
+        if config is None or not hasattr(config, "_experts_implementation"):
+            return False
+
+        if getattr(config, "_experts_implementation") == "eager":
+            return False
+
+        config._experts_implementation = "eager"
+        return True
+
     def generate_with_scores(
         self,
         prompt: str,
@@ -429,8 +450,31 @@ class LLMDEUPRiskEstimator(BaseEstimator, RegressorMixin):
             if eos is not None:
                 kwargs.setdefault("pad_token_id", eos)
 
-        with torch.no_grad():
-            outputs = self.model.generate(**inputs, **kwargs)
+        def _generate_once() -> Any:
+            with torch.no_grad():
+                return self.model.generate(**inputs, **kwargs)
+
+        try:
+            outputs = _generate_once()
+        except RuntimeError as exc:
+            if not self._is_grouped_mm_capability_error(exc):
+                raise
+
+            switched = self._force_eager_experts_implementation()
+            if not switched:
+                raise RuntimeError(
+                    "MoE grouped-mm kernel failed on this GPU. "
+                    "Set model.config._experts_implementation='eager' "
+                    "or use a model/stack compatible with grouped-mm kernels."
+                ) from exc
+
+            warnings.warn(
+                "Encountered grouped-mm capability mismatch; retrying generation "
+                "with model.config._experts_implementation='eager'.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            outputs = _generate_once()
 
         sequence = outputs.sequences[0]
         prompt_len = inputs["input_ids"].shape[1]
