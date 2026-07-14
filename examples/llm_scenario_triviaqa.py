@@ -48,10 +48,11 @@ import re
 from pathlib import Path
 
 import numpy as np
+import torch
 from datasets import load_dataset
 from scipy.stats import spearmanr
 from sklearn.metrics import average_precision_score, roc_auc_score
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 from deup.domains.llm import (
     HFGenerationConfig,
@@ -158,6 +159,46 @@ def triviaqa_reference(answer_field: dict) -> str:
     return ALIAS_SEP.join(seen.keys()) if seen else ""
 
 
+def _resolve_device_map(requested: str | None) -> str | None:
+    """Resolve requested device map, enforcing CUDA when explicitly requested."""
+
+    if requested is None:
+        return None
+
+    req = requested.strip().lower()
+    if req == "cuda":
+        try:
+            if torch.cuda.is_available():
+                return "cuda"
+            raise RuntimeError(
+                "Requested --device-map cuda, but CUDA is unavailable. "
+                "Update your NVIDIA driver or install a PyTorch build compatible "
+                "with your driver/runtime."
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                "Requested --device-map cuda, but CUDA initialization failed. "
+                "Update your NVIDIA driver or install a PyTorch build compatible "
+                f"with your driver/runtime. Original error: {exc}"
+            )
+
+    return requested
+
+
+def _resolve_torch_dtype(requested: str) -> str | torch.dtype:
+    """Map CLI dtype name to a torch dtype accepted by from_pretrained."""
+
+    name = requested.strip().lower()
+    if name == "auto":
+        return "auto"
+    mapping = {
+        "float16": torch.float16,
+        "bfloat16": torch.bfloat16,
+        "float32": torch.float32,
+    }
+    return mapping[name]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-id", default="deepreinforce-ai/Ornith-1.0-9B")
@@ -173,9 +214,24 @@ def main() -> None:
     parser.add_argument("--semantic-samples", type=int, default=3,
                         help="Repeated samples per prompt for semantic-entropy features. "
                              "Each sample is a full generation -- expensive for reasoning models.")
+    parser.add_argument("--torch-dtype", choices=["auto", "float16", "bfloat16", "float32"], default="auto",
+                        help="Weights dtype for model loading. Keep 'auto' unless you need to force one.")
+    parser.add_argument("--load-in-8bit", action="store_true",
+                        help="Enable 8-bit bitsandbytes quantization to reduce VRAM.")
+    parser.add_argument("--load-in-4bit", action="store_true",
+                        help="Enable 4-bit bitsandbytes quantization (recommended for 27B on 32GB GPUs).")
+    parser.add_argument("--max-memory-gpu", default=None,
+                        help="Per-GPU memory cap, e.g. '30GiB'. Requires --device-map auto.")
+    parser.add_argument("--max-memory-cpu", default=None,
+                        help="CPU RAM cap for offload when using --device-map auto, e.g. '120GiB'.")
+    parser.add_argument("--offload-folder", default=None,
+                        help="Folder for disk offload when model shards do not fit in GPU/CPU RAM.")
     parser.add_argument("--device-map", default=None)
     parser.add_argument("--output", default="llm_deup_triviaqa_results.json")
     args = parser.parse_args()
+
+    if args.load_in_4bit and args.load_in_8bit:
+        raise ValueError("Choose only one quantization mode: --load-in-4bit or --load-in-8bit.")
 
     loss_fn = GRADERS[args.grader]
 
@@ -189,10 +245,44 @@ def main() -> None:
         tokenizer.pad_token = tokenizer.eos_token
 
     model_kwargs = {}
-    if args.device_map is not None:
-        model_kwargs["device_map"] = args.device_map
-    model = AutoModelForCausalLM.from_pretrained(args.model_id, **model_kwargs)
-    if args.device_map is None:
+    resolved_device_map = _resolve_device_map(args.device_map)
+    if resolved_device_map is not None:
+        model_kwargs["device_map"] = resolved_device_map
+    model_kwargs["low_cpu_mem_usage"] = True
+    model_kwargs["torch_dtype"] = _resolve_torch_dtype(args.torch_dtype)
+
+    if args.load_in_4bit or args.load_in_8bit:
+        model_kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_4bit=args.load_in_4bit,
+            load_in_8bit=args.load_in_8bit,
+        )
+
+    if args.max_memory_gpu or args.max_memory_cpu:
+        if str(resolved_device_map).lower() != "auto":
+            raise ValueError("--max-memory-gpu/--max-memory-cpu require --device-map auto.")
+        max_memory: dict[int | str, str] = {}
+        if args.max_memory_gpu is not None:
+            if not torch.cuda.is_available():
+                raise RuntimeError("--max-memory-gpu was set but CUDA is unavailable.")
+            for idx in range(torch.cuda.device_count()):
+                max_memory[idx] = args.max_memory_gpu
+        if args.max_memory_cpu is not None:
+            max_memory["cpu"] = args.max_memory_cpu
+        model_kwargs["max_memory"] = max_memory
+
+    if args.offload_folder:
+        model_kwargs["offload_folder"] = args.offload_folder
+
+    try:
+        model = AutoModelForCausalLM.from_pretrained(args.model_id, **model_kwargs)
+    except torch.OutOfMemoryError as exc:
+        raise RuntimeError(
+            "CUDA OOM while loading model. For large models (e.g. 27B) on a 32GB GPU, "
+            "use quantized loading and auto device mapping, e.g.:\n"
+            "  --device-map auto --load-in-4bit --max-memory-gpu 30GiB --max-memory-cpu 120GiB"
+        ) from exc
+
+    if resolved_device_map is None:
         model.eval()
 
     train_prompts = [build_qa_prompt(tokenizer, r["question"]) for r in train_split]

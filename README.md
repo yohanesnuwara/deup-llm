@@ -19,6 +19,16 @@ cross-sectional finance support and aggregation-reliability diagnostics.
 
 Repository: <https://github.com/ursinasanderink/deup> · Docs: <https://ursinasanderink.github.io/deup/>
 
+## System
+
+Tested on CUDA 12.8 and 13.0. 
+
+For CUDA 12.8, run this to update torch
+
+```bash
+uv add --index https://download.pytorch.org/whl/cu128 --index-strategy unsafe-best-match "torch==2.8.0+cu128" "torchvision==0.23.0+cu128" "torchaudio==2.8.0+cu128"
+```
+
 ## Quickstart
 
 ```python
