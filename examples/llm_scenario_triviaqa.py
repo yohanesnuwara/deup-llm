@@ -7,37 +7,50 @@ answer), and the DEUP error predictor g(x) is trained to regress that loss from
 frozen-LLM confidence features. Repeated-sampling semantic entropy is enabled as
 an extra feature.
 
-Reasoning-model support
------------------------
-Models like ``deepreinforce-ai/Ornith-1.0-9B`` (Qwen3.5-based) open the assistant
-turn with a ``<think> ... </think>`` trace before the final answer. Two things
-follow:
+Reasoning vs non-reasoning models  (IMPORTANT)
+----------------------------------------------
+Qwen3.x and reasoning models (e.g. ``deepreinforce-ai/Ornith-1.0-9B``) open the
+assistant turn with a ``<think> ... </think>`` trace before the final answer. Two
+consequences:
 
-  * The grader must strip the reasoning trace and score only the post-``</think>``
-    answer (``strip_reasoning``). Grading the raw generation would score the whole
-    chain-of-thought.
-  * ``--max-new-tokens`` must be large enough to *close* the think block, or the
-    model never reaches its final answer. 32 is fine for a plain instruct model but
-    will truncate a reasoning model mid-thought. Default here is 512.
+  * The grader strips the reasoning trace and scores only the post-``</think>``
+    answer (``strip_reasoning``). A *dangling* (unclosed) ``<think>`` means the
+    generation was truncated before the model finished thinking -> no usable
+    answer -> scored wrong. This is correct behaviour, but it means a too-small
+    token budget makes EVERY row wrong.
 
-The token-confidence features (log-probs, entropy, margins) are still computed
-over the *full* generation, including the think trace -- that is intentional:
-uncertainty expressed during reasoning is legitimate signal for g(x).
+  * TriviaQA is factual recall, not multi-step reasoning. You almost always want
+    thinking OFF: ``--thinking off`` (default) passes ``enable_thinking=False``
+    through the chat template so no ``<think>`` block is opened, the model answers
+    directly, and ``--max-new-tokens 64`` is plenty.
 
-Why an instruct/reasoning model, not distilgpt2
------------------------------------------------
-DEUP's error predictor needs *variance* in the target: some answers right, some
-wrong. A base LM that is wrong on everything gives g(x) nothing to learn.
+    Use ``--thinking on`` only to study reasoning-trace uncertainty, and then you
+    MUST raise ``--max-new-tokens`` (>=512) so the think block can close.
+
+The token-confidence features (log-probs, entropy, margins) are computed over the
+*full* generation; when thinking is on, that includes the trace -- intentional.
 
 Install extras:
     pip install -e ".[llm]"
     pip install datasets tqdm scipy
 
-Research run (reasoning model):
+Example runs
+------------
+# Non-reasoning recall (recommended for TriviaQA), Qwen3.5-27B in 4-bit:
+uv run python examples/llm_scenario_triviaqa.py \
+    --model-id Qwen/Qwen3.5-27B --device-map auto --load-in-4bit \
+    --max-memory-gpu 30GiB --max-memory-cpu 120GiB \
+    --train-size 150 --test-size 50 --max-new-tokens 64 --semantic-samples 5
 
-uv run python examples/llm_scenario_triviaqa.py --model-id Qwen/Qwen2.5-0.5B-Instruct --device-map cuda --train-size 100 --test-size 50 --max-new-tokens 64 --semantic-samples 3
+# Small non-reasoning model:
+uv run python examples/llm_scenario_triviaqa.py \
+    --model-id Qwen/Qwen2.5-0.5B-Instruct --device-map cuda \
+    --train-size 100 --test-size 50 --max-new-tokens 64 --semantic-samples 3
 
-uv run python examples/llm_scenario_triviaqa.py --model-id deepreinforce-ai/Ornith-1.0-9B --device-map cuda --train-size 100 --test-size 50 --max-new-tokens 512 --semantic-samples 3
+# Study reasoning traces (thinking ON needs a big token budget):
+uv run python examples/llm_scenario_triviaqa.py \
+    --model-id Qwen/Qwen3.5-9B --device-map cuda --thinking on \
+    --train-size 100 --test-size 50 --max-new-tokens 512 --semantic-samples 3
 """
 
 from __future__ import annotations
@@ -82,13 +95,48 @@ def strip_reasoning(text: str) -> str:
         model finished thinking) means there is no usable answer -> everything from
         the tag onward is discarded;
       * plain text with no tags is returned unchanged.
+
+    Some chat templates *open* the think block in the prompt, so the generated
+    text starts mid-trace with no leading ``<think>`` tag but does contain a
+    closing ``</think>``. Handle that by keeping only text after the last
+    ``</think>`` when a close is present.
     """
 
+    # If a closing tag exists, the real answer is whatever follows the last one.
+    lower_full = text.lower()
+    if "</think>" in lower_full:
+        text = text[lower_full.rindex("</think>") + len("</think>"):]
+    # Remove any remaining balanced blocks (defensive).
     text = _THINK_RE.sub(" ", text)
     lower = text.lower()
-    if "<think>" in lower:  # truncated / unclosed reasoning block
+    if "<think>" in lower:  # truncated / unclosed reasoning block, no answer
         text = text[: lower.index("<think>")]
-    return text.strip()
+    text = text.strip()
+
+    # Some chat templates open the <think> block in the *prompt*, so a truncated
+    # generation arrives as a bare reasoning trace with NO tag at all (it starts
+    # mid-thought). Detect that shape and treat it as "no answer": a leading
+    # reasoning preamble with no closing tag anywhere in the raw generation.
+    if "</think>" not in lower_full and _looks_like_reasoning_preamble(text):
+        return ""
+    return text
+
+
+_REASONING_PREAMBLE_RE = re.compile(
+    r"^\s*(thinking process|let me think|okay,? let'?s|first,? (?:i|let)|"
+    r"the (?:user|question) (?:is )?ask|i need to|analyze the request|reasoning:)",
+    flags=re.IGNORECASE,
+)
+
+
+def _looks_like_reasoning_preamble(text: str) -> bool:
+    """Heuristic: text is an un-tagged reasoning trace, not a final answer.
+
+    Fires only on the characteristic opening of a chain-of-thought preamble. Real
+    trivia answers are short entities ("Kilimanjaro", "Japan") and never match.
+    """
+
+    return bool(_REASONING_PREAMBLE_RE.match(text))
 
 
 def _contains_subsequence(haystack: list[str], needle: list[str]) -> bool:
@@ -130,8 +178,13 @@ def alias_f1_loss(answer: str, reference: str) -> float:
 GRADERS = {"containment": alias_containment_loss, "f1": alias_f1_loss}
 
 
-def build_qa_prompt(tokenizer, question: str) -> str:
-    """Render a QA prompt, using the model's chat template when available."""
+def build_qa_prompt(tokenizer, question: str, *, thinking: bool) -> str:
+    """Render a QA prompt, using the model's chat template when available.
+
+    When ``thinking`` is False, pass ``enable_thinking=False`` so Qwen3.x models
+    do not open a ``<think>`` block (they answer directly). Tokenizers that do not
+    accept the flag (e.g. Qwen2.5) fall back gracefully.
+    """
 
     instruction = (
         "Answer the trivia question with the shortest correct answer only "
@@ -140,9 +193,16 @@ def build_qa_prompt(tokenizer, question: str) -> str:
     )
     if getattr(tokenizer, "chat_template", None):
         messages = [{"role": "user", "content": instruction}]
-        return tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
+        try:
+            return tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True,
+                enable_thinking=thinking,
+            )
+        except TypeError:
+            # Older/other tokenizers don't accept enable_thinking.
+            return tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True,
+            )
     return instruction
 
 
@@ -201,19 +261,23 @@ def _resolve_torch_dtype(requested: str) -> str | torch.dtype:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-id", default="deepreinforce-ai/Ornith-1.0-9B")
+    parser.add_argument("--model-id", default="Qwen/Qwen3.5-9B")
     parser.add_argument("--dataset-config", default="rc.nocontext",
                         help="TriviaQA config, e.g. 'rc.nocontext' or 'unfiltered.nocontext'.")
     parser.add_argument("--train-size", type=int, default=200)
     parser.add_argument("--test-size", type=int, default=100)
-    parser.add_argument("--max-new-tokens", type=int, default=512,
-                        help="Reasoning models need room to close <think>. Use >=256.")
+    parser.add_argument("--max-new-tokens", type=int, default=64,
+                        help="With --thinking off, 64 is plenty. With --thinking on, use >=512 "
+                             "so the <think> block can close.")
+    parser.add_argument("--thinking", choices=["off", "on"], default="off",
+                        help="off (default): suppress <think> for direct answers (best for TriviaQA). "
+                             "on: allow reasoning traces (requires large --max-new-tokens).")
     parser.add_argument("--grader", choices=list(GRADERS), default="containment",
                         help="containment = 0/1 answer-string match (recommended); "
                              "f1 = 1 - best token-F1 (continuous).")
     parser.add_argument("--semantic-samples", type=int, default=3,
                         help="Repeated samples per prompt for semantic-entropy features. "
-                             "Each sample is a full generation -- expensive for reasoning models.")
+                             "Each sample is a full generation -- expensive for large models.")
     parser.add_argument("--torch-dtype", choices=["auto", "float16", "bfloat16", "float32"], default="auto",
                         help="Weights dtype for model loading. Keep 'auto' unless you need to force one.")
     parser.add_argument("--load-in-8bit", action="store_true",
@@ -232,6 +296,11 @@ def main() -> None:
 
     if args.load_in_4bit and args.load_in_8bit:
         raise ValueError("Choose only one quantization mode: --load-in-4bit or --load-in-8bit.")
+
+    thinking = args.thinking == "on"
+    if thinking and args.max_new_tokens < 256:
+        print(f"[warning] --thinking on with --max-new-tokens {args.max_new_tokens}: the <think> "
+              "block likely won't close and every answer will be truncated. Use >=512.")
 
     loss_fn = GRADERS[args.grader]
 
@@ -285,13 +354,13 @@ def main() -> None:
     if resolved_device_map is None:
         model.eval()
 
-    train_prompts = [build_qa_prompt(tokenizer, r["question"]) for r in train_split]
+    train_prompts = [build_qa_prompt(tokenizer, r["question"], thinking=thinking) for r in train_split]
     train_refs = [triviaqa_reference(r["answer"]) for r in train_split]
-    test_prompts = [build_qa_prompt(tokenizer, r["question"]) for r in test_split]
+    test_prompts = [build_qa_prompt(tokenizer, r["question"], thinking=thinking) for r in test_split]
     test_refs = [triviaqa_reference(r["answer"]) for r in test_split]
 
     generation_config = HFGenerationConfig(max_new_tokens=args.max_new_tokens, do_sample=False)
-    # Ornith / Qwen3.5 recommended sampling for the semantic-entropy rollouts.
+    # Qwen3.x recommended sampling for the semantic-entropy rollouts.
     sample_generation_config = HFGenerationConfig(
         max_new_tokens=args.max_new_tokens, do_sample=True, temperature=0.6, top_p=0.95,
     )
@@ -306,14 +375,19 @@ def main() -> None:
         target_transform="none" if args.grader == "containment" else "log",
     )
 
-    print(f"Fitting DEUP error predictor on frozen-LLM {args.grader} losses...")
+    print(f"Fitting DEUP error predictor on frozen-LLM {args.grader} losses "
+          f"(thinking={'on' if thinking else 'off'})...")
     deup.fit(train_prompts, train_refs, loss_fn=loss_fn, show_progress=True)
 
     from tqdm.auto import tqdm
 
     risks, errors, rows = [], [], []
+    empty_answers = 0
     for prompt, ref in tqdm(list(zip(test_prompts, test_refs)), desc="DEUP eval"):
         pred = deup.predict_one(prompt)
+        final = strip_reasoning(pred.answer)
+        if not final:
+            empty_answers += 1
         err = loss_fn(pred.answer, ref)
         risks.append(pred.predicted_risk)
         errors.append(err)
@@ -321,7 +395,7 @@ def main() -> None:
             "prompt": prompt,
             "gold_aliases": ref.split(ALIAS_SEP),
             "answer_raw": pred.answer,
-            "answer_final": strip_reasoning(pred.answer),
+            "answer_final": final,
             "loss": err,
             "predicted_risk": pred.predicted_risk,
             "epistemic_uncertainty": pred.epistemic_uncertainty,
@@ -332,13 +406,33 @@ def main() -> None:
     err = np.asarray(errors, dtype=float)
     incorrect = (err > 0.5).astype(int)  # 1 = wrong
 
+    # --- Guardrail: catch the "model never answered" failure mode explicitly ---
+    if empty_answers > 0.5 * len(rows):
+        print(f"\n[WARNING] {empty_answers}/{len(rows)} answers were EMPTY after stripping "
+              "the reasoning trace. The model was cut off before producing a final answer.")
+        if thinking:
+            print("          You have --thinking on: raise --max-new-tokens to >=512.")
+        else:
+            print("          Inspect 'answer_final' in the output JSON; if it still contains "
+                  "'Thinking Process', this tokenizer ignored enable_thinking=False — "
+                  "use --thinking on with --max-new-tokens 512 instead.")
+
+    # risk_error_spearman is undefined if risk is constant; guard against the warning.
+    if np.std(risk) == 0 or np.std(err) == 0:
+        spearman = float("nan")
+        print("[note] risk or error is constant across all rows -> Spearman undefined "
+              "(this usually means every answer was scored the same, i.e. the run is degenerate).")
+    else:
+        spearman = float(spearmanr(risk, err).statistic)
+
     metrics = {
         "grader": args.grader,
+        "thinking": "on" if thinking else "off",
+        "n_empty_answers": empty_answers,
         "mean_loss": float(np.mean(err)),
         "accuracy": float(np.mean(1.0 - (err > 0.5))),
         "mean_predicted_risk": float(np.mean(risk)),
-        # Primary continuous metric: does predicted risk rank realized error?
-        "risk_error_spearman": float(spearmanr(risk, err).statistic),
+        "risk_error_spearman": spearman,
     }
     if len(np.unique(incorrect)) == 2:
         metrics["error_detection_auroc"] = float(roc_auc_score(incorrect, risk))
@@ -346,6 +440,8 @@ def main() -> None:
     else:
         metrics["error_detection_auroc"] = None
         metrics["error_detection_auprc"] = None
+        print("[note] Only one outcome class present (all right or all wrong) -> "
+              "AUROC/AUPRC undefined. For DEUP to learn, you need a MIX of right and wrong.")
 
     output = {"model_id": args.model_id, "dataset": f"trivia_qa/{args.dataset_config}",
               "metrics": metrics, "rows": rows}
